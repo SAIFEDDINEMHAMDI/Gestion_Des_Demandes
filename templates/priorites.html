@@ -1,0 +1,155 @@
+<!-- templates/priorites.html -->
+{% extends "base.html" %}
+{% block title %}Priorisation des Projets - WSJF & JH{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 py-6">
+    <h1 class="text-3xl font-bold text-gray-800 mb-6">Priorisation des Projets</h1>
+    <p class="mb-6 text-gray-600">
+        Projets triés par score WSJF décroissant avec estimation en jour-homme (JH).
+    </p>
+
+    <!-- Boutons de filtre -->
+    <div class="mb-6 flex space-x-4">
+        <a href="{{ url_for('priorites') }}"
+           class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm shadow-md {% if not filtre_retenu %}ring-2 ring-blue-400{% endif %}">
+            📋 Tous les projets
+        </a>
+        <a href="{{ url_for('priorites', retenu=1) }}"
+           class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm shadow-md {% if filtre_retenu == '1' %}ring-2 ring-green-400{% endif %}">
+            ✅ Projets retenus
+        </a>
+    </div>
+
+    <!-- Tableau des projets -->
+    <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-100">
+                <tr>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Titre</th>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Catégorie</th>
+                    <th class="px-6 py-3 text-center text-sm font-semibold text-gray-700">Score WSJF</th>
+                    <th class="px-6 py-3 text-center text-sm font-semibold text-gray-700">Estimation JH</th>
+                    <th class="px-6 py-3 text-center text-sm font-semibold text-gray-700">Statut</th>
+                    <th class="px-6 py-3 text-center text-sm font-semibold text-gray-700">Retenu ?</th>
+                    <th class="px-6 py-3 text-center text-sm font-semibold text-gray-700">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+                {% for projet in projets %}
+                    <tr class="hover:bg-gray-50 transition-colors duration-150 ease-in-out">
+                        <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ projet.titre }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-700">{{ projet.categorie or 'Non définie' }}</td>
+                        <td class="px-6 py-4 text-center text-sm text-indigo-600 font-semibold">{{ projet.score_wsjf }}</td>
+                        <td class="px-6 py-4 text-center text-sm text-green-600 font-semibold">{{ projet.duree_estimee_jh }} JH</td>
+
+                        <!-- Statut avec badge coloré -->
+                        <td class="px-6 py-4 text-center text-sm">
+                            <span class="px-2 py-1 rounded text-white text-xs font-semibold
+                                {% if projet.statut == 'Validé' %}
+                                    bg-green-600
+                                {% elif projet.statut == 'Rejeté' %}
+                                    bg-red-600
+                                {% elif projet.statut == 'En cours' %}
+                                    bg-yellow-400 text-black
+                                {% elif projet.statut == 'À planifier' %}
+                                    bg-blue-500
+                                {% else %}
+                                    bg-orange-500
+                                {% endif %}">
+                                {{ projet.statut or 'En attente' }}
+                            </span>
+                        </td>
+
+                        <!-- Boutons Retenu -->
+                        <td class="px-6 py-4 text-center">
+                            <form method="POST" action="{{ url_for('toggle_retenu', projet_id=projet.id) }}" style="display:inline;">
+                                {% if projet.retenu %}
+                                    <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-xs shadow">
+                                        ✅ Retenu
+                                    </button>
+                                {% else %}
+                                    <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-xs shadow">
+                                        ❌ Non retenu
+                                    </button>
+                                {% endif %}
+                            </form>
+                        </td>
+
+                        <!-- Actions -->
+                        <td class="px-6 py-4 text-center text-sm space-x-4">
+                            <a href="{{ url_for('modifier_priorite', id=projet.id) }}"
+                               class="inline-block text-blue-600 hover:text-blue-800 transition" title="Modifier">
+                                <!-- Icône édition -->
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                          d="M15.232 5.232l3.536 3.536M9 11l6 6M3 21h6l11-11a2.828 2.828 0 00-4-4L5 17v4z" />
+                                </svg>
+                            </a>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center px-6 py-4 text-gray-500">
+                            Aucun projet trouvé.
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Graphique -->
+    <div class="mt-10 bg-white shadow-lg rounded-lg p-6">
+        <h2 class="text-xl font-semibold mb-4">Répartition des Projets</h2>
+        <canvas id="wsjfJHChart"></canvas>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const ctx = document.getElementById('wsjfJHChart').getContext('2d');
+        const projetsData = [
+            {% for projet in projets %}
+                {
+                    nom: "{{ projet.titre }}",
+                    wsjf: {{ projet.score_wsjf }},
+                    jh: {{ projet.duree_estimee_jh }},
+                    retenu: {{ projet.retenu }}
+                },
+            {% endfor %}
+        ];
+
+        const labels = projetsData.map(p => p.nom);
+        const dataWSJF = projetsData.map(p => p.wsjf);
+        const dataJH = projetsData.map(p => p.jh);
+        const backgroundColors = projetsData.map(p => p.retenu ? '#10b981' : '#f87171'); // Vert si retenu
+
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Score WSJF',
+                        data: dataWSJF,
+                        backgroundColor: backgroundColors
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'top' },
+                    title: {
+                        display: true,
+                        text: 'Projets - Score WSJF vs Charge estimée (JH)'
+                    }
+                },
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+    </script>
+</div>
+{% endblock %}

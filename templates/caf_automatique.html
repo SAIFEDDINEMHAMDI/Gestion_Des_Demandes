@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}CAF Disponible (Calcul Automatique){% endblock %}
+
+{% block content %}
+<div class="max-w-full mx-auto px-4 py-6">
+    <h1 class="text-2xl font-bold mb-6">CAF Disponible</h1>
+    <p class="mb-4 text-gray-600">
+        Chaque profil affiche le nombre de jours-homme disponibles par semaine (5 JH/semaine par personne).
+    </p>
+
+    <!-- Filtre par mois -->
+    <div class="flex justify-between mb-6">
+        <form method="GET" class="flex items-center gap-2">
+            <label for="mois" class="font-medium">Filtrer par mois :</label>
+            <select name="mois" id="mois" class="border rounded px-3 py-1" onchange="this.form.submit()">
+                <option value="all" {% if mois_filtre == 'all' %}selected{% endif %}>Tous les mois</option>
+                {% for m in mois_labels %}
+                    <option value="{{ m }}" {% if mois_filtre == m %}selected{% endif %}>
+                        {{ m }}
+                    </option>
+                {% endfor %}
+            </select>
+        </form>
+
+        <button id="export-btn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">
+            📥 Exporter en CSV
+        </button>
+    </div>
+
+    <!-- Tableau -->
+    <div class="overflow-x-auto shadow rounded-lg border">
+        <table id="caf-table" class="min-w-full bg-white divide-y divide-gray-200">
+            <thead class="bg-gray-100 sticky top-0 z-10">
+                <tr>
+                    <th class="px-6 py-3 text-left font-semibold text-gray-700">Profil</th>
+                    {% for s in semaines_affichees %}
+                        <th class="px-6 py-3 text-center font-semibold text-gray-700">{{ s }}</th>
+                    {% endfor %}
+                </tr>
+                <tr>
+                    <th class="px-6 py-3 text-left font-medium text-gray-700"></th>
+                    {% for s in semaines_affichees %}
+                        <th class="px-6 py-3 text-center font-medium text-gray-700">
+                            {{ semaine_to_mois[s] }}
+                        </th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+                {% for row in data %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 font-medium">
+                            {{ row.profil }} ({{ row.nb_collab }} pers.)
+                        </td>
+                        {% for s in semaines_affichees %}
+                            <td class="px-6 py-4 text-center">
+                                {{ row[s] }} JH
+                            </td>
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Export CSV -->
+<script>
+    document.getElementById("export-btn").addEventListener("click", () => {
+        let csv = "Profil,{{ semaines_affichees|join(',') }}\n";
+
+        const table = document.getElementById("caf-table");
+        Array.from(table.tBodies[0].rows).forEach(row => {
+            let line = row.cells[0].textContent;
+            for (let i = 1; i < row.cells.length; i++) {
+                const text = row.cells[i].textContent.replace(" JH", "").trim();
+                line += "," + text;
+            }
+            csv += line + "\n";
+        });
+
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = "caf_disponible.csv";
+        link.click();
+    });
+</script>
+{% endblock %}

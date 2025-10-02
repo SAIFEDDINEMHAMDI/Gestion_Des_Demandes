@@ -1,0 +1,36 @@
+# Environnement virtuel
+.venv/
+venv/
+env/
+
+# Base SQLite (ne jamais la pousser sur GitHub)
+database/*.db
+*.sqlite3
+
+# PyCharm / VSCode
+.idea/
+.vscode/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Fichiers temporaires
+*.log
+*.bak
+*.swp
+.DS_Store
+
+# Uploads
+uploads/
+
+# Fichiers générés par Python
+*.egg-info/
+dist/
+build/
+
+
+# Ignore SQLite database and temp files
+database/*.db
+database/*.db-shm
+database/*.db-wal

@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}CAF Disponibles par Collaborateur{% endblock %}
+
+{% block content %}
+<div class="max-w-full mx-auto px-4 py-6">
+    <h1 class="text-2xl font-bold mb-6">CAF Disponibles par Collaborateur</h1>
+    <p class="mb-4 text-gray-600">
+        Répartition des capacités disponibles (JH) en mode BUILD et RUN.
+    </p>
+
+    <!-- Tableau -->
+    <div class="overflow-x-auto shadow rounded-lg border">
+        <table class="min-w-full bg-white divide-y divide-gray-200">
+            <thead class="bg-gray-100 sticky top-0 z-10">
+                <tr>
+                    <th class="px-6 py-3 text-left font-semibold text-gray-700">Nom & Prénom</th>
+                    <th class="px-6 py-3 text-left font-semibold text-gray-700">Profil</th>
+                    <th class="px-6 py-3 text-left font-semibold text-gray-700">Affectation</th>
+                    <th class="px-6 py-3 text-center font-semibold text-gray-700">% Build</th>
+                    <th class="px-6 py-3 text-center font-semibold text-gray-700">% Run</th>
+                    <th class="px-6 py-3 text-center font-semibold text-gray-700">CAF BUILD (JH)</th>
+                    <th class="px-6 py-3 text-center font-semibold text-gray-700">CAF RUN (JH)</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+                {% for collab in collaborateurs %}
+                    <tr class="hover:bg-gray-50 transition-colors duration-150 ease-in-out">
+                        <td class="px-6 py-4">{{ collab.nom_prenom }}</td>
+                        <td class="px-6 py-4">{{ collab.profil }}</td>
+                        <td class="px-6 py-4">{{ collab.affectation }}</td>
+                        <td class="px-6 py-4 text-center">{{ collab.build_ratio }}%</td>
+                        <td class="px-6 py-4 text-center">{{ collab.run_ratio }}%</td>
+                        <td class="px-6 py-4 text-center text-green-600">{{ collab.caf_disponible_build }} JH</td>
+                        <td class="px-6 py-4 text-center text-blue-600">{{ collab.caf_disponible_run }} JH</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Lien retour -->
+    <div class="mt-6 flex justify-center">
+        <a href="{{ url_for('priorites') }}" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded transition">
+            ← Retour
+        </a>
+    </div>
+</div>
+{% endblock %}
