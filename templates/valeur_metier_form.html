@@ -13,7 +13,19 @@
                    value="{{ valeur.libelle if valeur else '' }}"
                    class="mt-1 block w-full border-gray-300 rounded px-3 py-2 focus:ring focus:ring-biat-secondary/50">
         </div>
-
+           <!-- Libellé -->
+        <div>
+            <label for="libelle" class="block text-sm font-medium text-gray-700">Type Libellé</label>
+            <input type="text" name="type_libelle" id="type_libelle" required
+                   value="{{ valeur.type_libelle if valeur else '' }}"
+                   class="mt-1 block w-full border-gray-300 rounded px-3 py-2 focus:ring focus:ring-biat-secondary/50">
+        </div>
+        <div>
+            <label for="libelle" class="block text-sm font-medium text-gray-700">Valeur Libellé</label>
+            <input type="text" name="type_libelle" id="valeur_libelle" required
+                   value="{{ valeur.type_libelle if valeur else '' }}"
+                   class="mt-1 block w-full border-gray-300 rounded px-3 py-2 focus:ring focus:ring-biat-secondary/50">
+        </div>
         <!-- Pondération -->
         <div>
             <label for="ponderation" class="block text-sm font-medium text-gray-700">Pondération</label>

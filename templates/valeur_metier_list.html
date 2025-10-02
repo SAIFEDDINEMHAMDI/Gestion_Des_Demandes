@@ -1,28 +1,25 @@
+<!-- templates/valeur_metier_list.html -->
 {% extends "base.html" %}
 {% block title %}Valeurs métier{% endblock %}
 
 {% block content %}
-<div class="max-w-5xl mx-auto px-6 py-8">
+<div class="max-w-6xl mx-auto px-6 py-8">
   <h1 class="text-3xl font-bold mb-8 text-blue-600">Valeurs métier</h1>
 
-  <!-- Recherche + bouton ajout -->
-  <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+  <!-- Barre de recherche + bouton Ajouter -->
+  <div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
     <form method="get" action="{{ url_for('valeurs_metier.liste_valeurs') }}" class="flex items-center gap-2">
-      <div class="relative">
-        <input type="text" name="search" value="{{ request.args.get('search','') }}"
-               placeholder="Rechercher libellé ou pondération..."
-               class="border border-gray-300 rounded-lg px-4 py-2 text-sm w-72 focus:ring-blue-400 focus:border-blue-400">
-        <button type="submit"
-                class="absolute right-2 top-1/2 -translate-y-1/2 bg-white px-2 py-1 rounded text-blue-600 hover:text-blue-800 transition">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M12.9 14.32a8 8 0 111.414-1.414l4.387 4.387a1 1 0 01-1.414 1.414l-4.387-4.387zM14 8a6 6 0 11-12 0 6 6 0 0112 0z" clip-rule="evenodd"/>
-          </svg>
-        </button>
-      </div>
+      <input type="text" name="q" value="{{ request.args.get('q','') }}"
+             placeholder="Rechercher libellé / type / valeur / pondération..."
+             class="border border-gray-300 rounded-lg px-4 py-2 text-sm w-80 focus:ring-blue-400 focus:border-blue-400">
+      <button type="submit"
+              class="bg-white border border-gray-300 px-3 py-2 rounded text-blue-600 hover:text-blue-800 transition">
+        🔍
+      </button>
     </form>
 
     <button onclick="openAddModal()"
-            class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-full shadow-lg flex items-center gap-2 transition">
+            class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-full shadow-lg">
       ➕ Ajouter une valeur métier
     </button>
   </div>
@@ -33,6 +30,8 @@
       <thead class="bg-gray-100">
         <tr>
           <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Libellé</th>
+          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Type Libellé</th>
+          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Valeur Libellé</th>
           <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Pondération</th>
           <th class="px-6 py-3 text-center text-sm font-semibold text-gray-700">Actions</th>
         </tr>
@@ -41,34 +40,25 @@
         {% for val in valeurs %}
         <tr class="hover:bg-gray-50 transition">
           <td class="px-6 py-4 text-sm text-gray-800">{{ val.libelle }}</td>
-          <td class="px-6 py-4 text-sm font-medium text-gray-700">{{ val.ponderation }}</td>
-          <td class="px-6 py-4 flex items-center justify-center gap-4">
-            <!-- Modifier -->
-            <button type="button"
-                    onclick="openEditModal('{{ val.id }}','{{ val.libelle|e }}','{{ val.ponderation }}')"
-                    class="inline-flex items-center justify-center p-2 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700 transition"
-                    title="Modifier">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z"/>
-                <path fill-rule="evenodd" d="M4 16a1 1 0 011-1h9a1 1 0 110 2H5a1 1 0 01-1-1z" clip-rule="evenodd"/>
-              </svg>
-            </button>
-            <!-- Supprimer -->
-            <form action="{{ url_for('valeurs_metier.supprimer_valeur', id=val.id) }}" method="post" class="inline">
-              <button type="submit"
-                      onclick="return confirm('Supprimer {{ val.libelle }} ?')"
-                      class="inline-flex items-center justify-center p-2 rounded-full bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 transition"
-                      title="Supprimer">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </form>
+          <td class="px-6 py-4 text-sm text-gray-700">{{ val.type_libelle }}</td>
+          <td class="px-6 py-4 text-sm text-gray-700">{{ val.valeur_libelle }}</td>
+          <td class="px-6 py-4 text-sm text-gray-700">{{ val.ponderation }}</td>
+          <td class="px-6 py-4">
+            <div class="flex items-center justify-center gap-3">
+              <button type="button"
+                      onclick='openEditModal({{ val.id|tojson }}, {{ val.libelle|tojson }}, {{ val.type_libelle|tojson }}, {{ val.valeur_libelle|tojson }}, {{ val.ponderation|tojson }})'
+                      class="p-2 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-600"
+                      title="Modifier">✏️</button>
+              <form action="{{ url_for('valeurs_metier.supprimer_valeur', id=val.id) }}" method="post" class="inline">
+                <button type="submit" onclick="return confirm('Supprimer {{ val.libelle }} ?')"
+                        class="p-2 rounded-full bg-red-50 hover:bg-red-100 text-red-600" title="Supprimer">🗑️</button>
+              </form>
+            </div>
           </td>
         </tr>
         {% else %}
         <tr>
-          <td colspan="3" class="text-center px-6 py-4 text-gray-500">Aucune valeur métier trouvée</td>
+          <td colspan="5" class="text-center px-6 py-6 text-gray-500">Aucune valeur métier trouvée</td>
         </tr>
         {% endfor %}
       </tbody>
@@ -78,26 +68,39 @@
   <!-- Pagination -->
   <div class="flex justify-center items-center mt-6 gap-6">
     {% if page > 1 %}
-    <a href="{{ url_for('valeurs_metier.liste_valeurs', page=page-1, search=request.args.get('search','')) }}"
-       class="text-blue-600 hover:text-blue-800 text-lg">⬅️</a>
+      <a href="{{ url_for('valeurs_metier.liste_valeurs', page=page-1, q=request.args.get('q','')) }}"
+         class="text-blue-600 hover:text-blue-800 text-lg">⬅️</a>
     {% endif %}
     <span class="text-gray-700 text-sm font-semibold">{{ page }}/{{ total_pages }}</span>
     {% if page < total_pages %}
-    <a href="{{ url_for('valeurs_metier.liste_valeurs', page=page+1, search=request.args.get('search','')) }}"
-       class="text-blue-600 hover:text-blue-800 text-lg">➡️</a>
+      <a href="{{ url_for('valeurs_metier.liste_valeurs', page=page+1, q=request.args.get('q','')) }}"
+         class="text-blue-600 hover:text-blue-800 text-lg">➡️</a>
     {% endif %}
   </div>
 </div>
 
-<!-- MODAL AJOUT -->
+<!-- ===== MODAL AJOUT ===== -->
 <div id="addModal" class="fixed inset-0 hidden bg-gray-900 bg-opacity-50 flex items-center justify-center z-50">
-  <div id="addModalContent"
-       class="bg-white rounded-lg shadow-lg w-full max-w-md p-6 transform scale-95 opacity-0 transition-all duration-300 ease-out">
+  <div id="addModalContent" class="bg-white rounded-lg shadow-lg w-full max-w-md p-6 transform scale-95 opacity-0 transition-all duration-300 ease-out">
     <h2 class="text-xl font-bold mb-4 text-blue-600">Ajouter une Valeur Métier</h2>
     <form method="POST" action="{{ url_for('valeurs_metier.ajouter_valeur') }}">
       <div class="mb-3">
-        <label class="block text-sm font-medium">Libellé</label>
-        <input type="text" name="libelle" required class="w-full border px-3 py-2 rounded">
+  <label class="block text-sm font-medium">Libellé</label>
+  <select id="libelleAdd" name="libelle" required class="w-full border px-3 py-2 rounded">
+    <option value="">-- Sélectionner un libellé --</option>
+  </select>
+</div>
+      <div class="mb-3">
+        <label class="block text-sm font-medium">Type Libellé</label>
+        <select id="typeLibelleAdd" name="type_libelle" required class="w-full border px-3 py-2 rounded">
+          <option value="">-- Sélectionner un type --</option>
+        </select>
+      </div>
+      <div class="mb-3">
+        <label class="block text-sm font-medium">Valeur Libellé</label>
+        <select id="valeurLibelleAdd" name="valeur_libelle" required class="w-full border px-3 py-2 rounded">
+          <option value="">-- Sélectionner une valeur --</option>
+        </select>
       </div>
       <div class="mb-3">
         <label class="block text-sm font-medium">Pondération</label>
@@ -111,15 +114,26 @@
   </div>
 </div>
 
-<!-- MODAL EDIT -->
+<!-- ===== MODAL EDIT ===== -->
 <div id="editModal" class="fixed inset-0 hidden bg-gray-900 bg-opacity-50 flex items-center justify-center z-50">
-  <div id="editModalContent"
-       class="bg-white rounded-lg shadow-lg w-full max-w-md p-6 transform scale-95 opacity-0 transition-all duration-300 ease-out">
+  <div id="editModalContent" class="bg-white rounded-lg shadow-lg w-full max-w-md p-6 transform scale-95 opacity-0 transition-all duration-300 ease-out">
     <h2 class="text-xl font-bold mb-4 text-blue-600">Modifier la Valeur Métier</h2>
     <form id="editForm" method="POST">
       <div class="mb-3">
         <label class="block text-sm font-medium">Libellé</label>
-        <input type="text" id="editLibelle" name="libelle" required class="w-full border px-3 py-2 rounded">
+        <input type="text" id="editLibelle" name="libelle" readonly class="w-full border px-3 py-2 rounded bg-gray-100">
+      </div>
+      <div class="mb-3">
+        <label class="block text-sm font-medium">Type Libellé</label>
+        <select id="edittypeLibelle" name="type_libelle" required class="w-full border px-3 py-2 rounded">
+          <option value="">-- Sélectionner un type --</option>
+        </select>
+      </div>
+      <div class="mb-3">
+        <label class="block text-sm font-medium">Valeur Libellé</label>
+        <select id="editValeurLibelle" name="valeur_libelle" required class="w-full border px-3 py-2 rounded">
+          <option value="">-- Sélectionner une valeur --</option>
+        </select>
       </div>
       <div class="mb-3">
         <label class="block text-sm font-medium">Pondération</label>
@@ -134,44 +148,207 @@
 </div>
 
 <script>
-  // --- ADD MODAL ---
-  function openAddModal() {
-    const modal = document.getElementById("addModal");
-    const content = document.getElementById("addModalContent");
-    modal.classList.remove("hidden");
-    setTimeout(() => {
-      content.classList.remove("scale-95","opacity-0");
-      content.classList.add("scale-100","opacity-100");
-    }, 50);
-  }
-  function closeAddModal() {
-    const modal = document.getElementById("addModal");
-    const content = document.getElementById("addModalContent");
-    content.classList.remove("scale-100","opacity-100");
-    content.classList.add("scale-95","opacity-0");
-    setTimeout(() => modal.classList.add("hidden"), 200);
+// ---------- FONCTIONS MODALS ----------
+function openAddModal() {
+  const modal = document.getElementById("addModal");
+  const content = document.getElementById("addModalContent");
+  modal.classList.remove("hidden");
+  setTimeout(() => {
+    content.classList.remove("scale-95","opacity-0");
+    content.classList.add("scale-100","opacity-100");
+  }, 10);
+}
+function closeAddModal() {
+  const modal = document.getElementById("addModal");
+  const content = document.getElementById("addModalContent");
+  content.classList.remove("scale-100","opacity-100");
+  content.classList.add("scale-95","opacity-0");
+  setTimeout(() => modal.classList.add("hidden"), 150);
+}
+
+function openEditModal(id, libelle, typeLibelle, valeurLibelle, ponderation) {
+  // champs simples
+  document.getElementById("editLibelle").value = libelle || '';
+  document.getElementById("editPonderation").value = ponderation || '';
+  document.getElementById("editForm").action = "/valeurs/modifier/" + id;
+
+  const typeSelect = document.getElementById("edittypeLibelle");
+  const valeurSelect = document.getElementById("editValeurLibelle");
+
+  // reset visuel
+  typeSelect.innerHTML = '<option value="">Chargement...</option>';
+  valeurSelect.innerHTML = '<option value="">-- Sélectionner une valeur --</option>';
+
+// Charger la liste des libellés au démarrage
+fetch("/valeurs/get_libelles")
+  .then(r => r.json())
+  .then(data => {
+    const libelleAdd = document.getElementById("libelleAdd");
+    libelleAdd.innerHTML = '<option value="">-- Sélectionner un libellé --</option>';
+    (data.libelles || []).forEach(lib => {
+      const opt = document.createElement("option");
+      opt.value = lib;
+      opt.textContent = lib;
+      libelleAdd.appendChild(opt);
+    });
+  })
+  .catch(err => {
+    console.error("Erreur chargement libellés:", err);
+  });
+
+  // charger les types du libellé
+  fetch(`/valeurs/get_types/${encodeURIComponent(libelle || '')}`)
+    .then(r => r.json())
+    .then(data => {
+      typeSelect.innerHTML = '<option value="">-- Sélectionner un type --</option>';
+      (data.types || []).forEach(t => {
+        const opt = document.createElement('option');
+        opt.value = t;
+        opt.textContent = t;
+        if (t === (typeLibelle || '')) opt.selected = true;
+        typeSelect.appendChild(opt);
+      });
+
+      // charger les valeurs du type sélectionné
+      if (typeLibelle) {
+        fetch(`/valeurs/get_valeurs/${encodeURIComponent(libelle || '')}/${encodeURIComponent(typeLibelle || '')}`)
+          .then(r => r.json())
+          .then(vdata => {
+            valeurSelect.innerHTML = '<option value="">-- Sélectionner une valeur --</option>';
+            (vdata.valeurs || []).forEach(v => {
+              const opt = document.createElement('option');
+              opt.value = v;
+              opt.textContent = v;
+              if (v === (valeurLibelle || '')) opt.selected = true;
+              valeurSelect.appendChild(opt);
+            });
+          })
+          .catch(err => {
+            console.error('Erreur chargement valeurs (edit):', err);
+            valeurSelect.innerHTML = '<option value="">(Erreur chargement)</option>';
+          });
+      }
+    })
+    .catch(err => {
+      console.error('Erreur chargement types (edit):', err);
+      typeSelect.innerHTML = '<option value="">(Erreur chargement)</option>';
+    });
+
+  const modal = document.getElementById("editModal");
+  const content = document.getElementById("editModalContent");
+  modal.classList.remove("hidden");
+  setTimeout(() => {
+    content.classList.remove("scale-95","opacity-0");
+    content.classList.add("scale-100","opacity-100");
+  }, 10);
+}
+
+function closeEditModal() {
+  const modal = document.getElementById("editModal");
+  const content = document.getElementById("editModalContent");
+  content.classList.remove("scale-100","opacity-100");
+  content.classList.add("scale-95","opacity-0");
+  setTimeout(() => modal.classList.add("hidden"), 150);
+}
+
+
+// ---------- DÉPENDANCES ADD + EDIT ----------
+document.addEventListener('DOMContentLoaded', () => {
+  const libelleAdd = document.getElementById('libelleAdd');
+  const typeLibelleAdd = document.getElementById('typeLibelleAdd');
+  const valeurLibelleAdd = document.getElementById('valeurLibelleAdd');
+
+  // ADD: libellé -> types
+  if (libelleAdd && typeLibelleAdd && valeurLibelleAdd) {
+    libelleAdd.addEventListener('change', () => {
+      const libelle = libelleAdd.value.trim();
+      typeLibelleAdd.innerHTML = '<option value="">Chargement...</option>';
+      valeurLibelleAdd.innerHTML = '<option value="">-- Sélectionner une valeur --</option>';
+
+      if (!libelle) {
+        typeLibelleAdd.innerHTML = '<option value="">-- Sélectionner un type --</option>';
+        return;
+      }
+
+      fetch(`/valeurs/get_types/${encodeURIComponent(libelle)}`)
+        .then(r => r.json())
+        .then(data => {
+          typeLibelleAdd.innerHTML = '<option value="">-- Sélectionner un type --</option>';
+          (data.types || []).forEach(t => {
+            const opt = document.createElement('option');
+            opt.value = t;
+            opt.textContent = t;
+            typeLibelleAdd.appendChild(opt);
+          });
+        })
+        .catch(err => {
+          console.error('Erreur chargement types (add):', err);
+          typeLibelleAdd.innerHTML = '<option value="">(Erreur chargement)</option>';
+        });
+    });
+
+    // ADD: type -> valeurs
+    typeLibelleAdd.addEventListener('change', () => {
+      const libelle = (libelleAdd.value || '').trim();
+      const type = typeLibelleAdd.value;
+      valeurLibelleAdd.innerHTML = '<option value="">Chargement...</option>';
+
+      if (!libelle || !type) {
+        valeurLibelleAdd.innerHTML = '<option value="">-- Sélectionner une valeur --</option>';
+        return;
+      }
+
+      fetch(`/valeurs/get_valeurs/${encodeURIComponent(libelle)}/${encodeURIComponent(type)}`)
+        .then(r => r.json())
+        .then(data => {
+          valeurLibelleAdd.innerHTML = '<option value="">-- Sélectionner une valeur --</option>';
+          (data.valeurs || []).forEach(v => {
+            const opt = document.createElement('option');
+            opt.value = v;
+            opt.textContent = v;
+            valeurLibelleAdd.appendChild(opt);
+          });
+        })
+        .catch(err => {
+          console.error('Erreur chargement valeurs (add):', err);
+          valeurLibelleAdd.innerHTML = '<option value="">(Erreur chargement)</option>';
+        });
+    });
   }
 
-  // --- EDIT MODAL ---
-  function openEditModal(id, libelle, ponderation) {
-    document.getElementById("editLibelle").value = libelle;
-    document.getElementById("editPonderation").value = ponderation;
-    document.getElementById("editForm").action = "/valeurs/modifier/" + id;
+  // EDIT: si on change le type dans le modal, recharger les valeurs
+  const edType = document.getElementById('edittypeLibelle');
+  const edValeur = document.getElementById('editValeurLibelle');
+  const edLib = document.getElementById('editLibelle');
 
-    const modal = document.getElementById("editModal");
-    const content = document.getElementById("editModalContent");
-    modal.classList.remove("hidden");
-    setTimeout(() => {
-      content.classList.remove("scale-95","opacity-0");
-      content.classList.add("scale-100","opacity-100");
-    }, 50);
+  if (edType && edValeur && edLib) {
+    edType.addEventListener('change', () => {
+      const libelle = (edLib.value || '').trim();
+      const type = edType.value;
+      edValeur.innerHTML = '<option value="">Chargement...</option>';
+
+      if (!libelle || !type) {
+        edValeur.innerHTML = '<option value="">-- Sélectionner une valeur --</option>';
+        return;
+      }
+
+      fetch(`/valeurs/get_valeurs/${encodeURIComponent(libelle)}/${encodeURIComponent(type)}`)
+        .then(r => r.json())
+        .then(data => {
+          edValeur.innerHTML = '<option value="">-- Sélectionner une valeur --</option>';
+          (data.valeurs || []).forEach(v => {
+            const opt = document.createElement('option');
+            opt.value = v;
+            opt.textContent = v;
+            edValeur.appendChild(opt);
+          });
+        })
+        .catch(err => {
+          console.error('Erreur chargement valeurs (edit change type):', err);
+          edValeur.innerHTML = '<option value="">(Erreur chargement)</option>';
+        });
+    });
   }
-  function closeEditModal() {
-    const modal = document.getElementById("editModal");
-    const content = document.getElementById("editModalContent");
-    content.classList.remove("scale-100","opacity-100");
-    content.classList.add("scale-95","opacity-0");
-    setTimeout(() => modal.classList.add("hidden"), 200);
-  }
+});
 </script>
 {% endblock %}

@@ -16,6 +16,7 @@ from routes.caf import caf_bp
 from routes.programmes_routes import programmes_bp
 from routes.projets_routes import projets_bp
 from routes.valeurs_metier_routes import valeurs_bp
+from routes.complexite_routes import  complexite_bp
 from routes.profils_routes import profils_bp
 
 # ----------------- CONFIGURATION -----------------
@@ -31,7 +32,7 @@ app.register_blueprint(profils_bp)
 app.register_blueprint(programmes_bp)
 app.register_blueprint(projets_bp)
 app.register_blueprint(valeurs_bp)
-
+app.register_blueprint(complexite_bp)
 # Gestion des uploads
 UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'uploads')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
