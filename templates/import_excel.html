@@ -26,20 +26,8 @@
   <!-- Main content -->
   <main class="max-w-4xl mx-auto mt-20 p-8 bg-white shadow-2xl rounded-2xl text-center">
     <h2 class="text-3xl font-bold text-[var(--biat-blue)] mb-6">Bienvenue sur le portail de gestion des demandes</h2>
-    <p class="text-gray-700 text-lg mb-10">Veuillez choisir une action :</p>
 
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-8">
-      <!-- Créer une nouvelle demande -->
-      <a href="{{ url_for('interface1') }}"
-         class="bg-[var(--biat-orange)] text-white px-6 py-6 rounded-xl shadow-lg hover:bg-orange-500 transition flex flex-col items-center justify-center">
-        <span class="font-semibold text-lg">Créer une nouvelle demande</span>
-      </a>
-
-      <!-- Suivi -->
-      <a href="{{ url_for('suivi') }}"
-         class="bg-[var(--biat-blue)] text-white px-6 py-6 rounded-xl shadow-lg hover:bg-blue-900 transition flex flex-col items-center justify-center">
-        <span class="font-semibold text-lg">Suivre une demande</span>
-      </a>
 
       <!-- Import Excel -->
       <a href="{{ url_for('import.import_excel') }}"

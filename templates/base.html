@@ -199,15 +199,29 @@
                         <span>Profils</span>
                     </a>
                 </li>
-                <li>
-                    <a href="{{ url_for('programmes.liste_programmes') }}"
-                       class="flex items-center space-x-3 p-3 rounded hover:bg-biat-secondary/20 hover:text-biat-secondary transition">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 opacity-90" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V15a2 2 0 01-2 2z" />
-                        </svg>
-                        <span>Programmes</span>
-                    </a>
-                </li>
+               <li>
+  <a href="{{ url_for('programmes.liste_programmes') }}"
+     class="flex items-center space-x-3 p-3 rounded hover:bg-biat-secondary/20 hover:text-biat-secondary transition">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 opacity-90" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V15a2 2 0 01-2 2z" />
+      </svg>
+      <span>Programmes</span>
+  </a>
+</li>
+
+<!-- 👉 Importer fichier -->
+<li>
+  <a href="{{ url_for('import.import_excel') }}"
+     class="flex items-center space-x-3 p-3 rounded hover:bg-biat-secondary/20 hover:text-biat-secondary transition">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 opacity-90" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M11 11V3a1 1 0 012 0v8h8a1 1 0 010 2h-8v8a1 1 0 01-2 0v-8H3a1 1 0 010-2h8z"/>
+      </svg>
+      <span>Importer fichier</span>
+  </a>
+</li>
+
             </ul>
         </nav>
     </aside>
