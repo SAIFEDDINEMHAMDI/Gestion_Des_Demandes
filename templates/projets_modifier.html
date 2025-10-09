@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+{% block title %}Modifier le Projet{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-8 py-10">
+  <h1 class="text-3xl font-bold mb-6 text-blue-600">Modifier le Projet</h1>
+
+  <!-- ============================= -->
+  <!-- AFFICHAGE DES MESSAGES FLASH -->
+  <!-- ============================= -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="mb-6 space-y-2">
+        {% for category, message in messages %}
+          <div class="px-4 py-3 rounded-lg text-white
+                      {% if category == 'success' %}bg-green-600
+                      {% elif category == 'error' %}bg-red-600
+                      {% elif category == 'warning' %}bg-yellow-500
+                      {% else %}bg-blue-500{% endif %}">
+            {{ message }}
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+
+  <!-- ================================================== -->
+  <!-- 🔹 BLOC 1️⃣ : INFORMATIONS GÉNÉRALES DU PROJET -->
+  <!-- ================================================== -->
+  <form method="POST" class="bg-white shadow-md rounded-lg p-6 mb-10 border border-gray-200">
+    <h2 class="text-2xl font-semibold text-blue-600 mb-4">Informations générales</h2>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div>
+        <label class="block font-medium text-gray-700 mb-1">Titre</label>
+        <input type="text" name="titre" value="{{ projet.titre_projet }}"
+               class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-blue-400 focus:border-blue-400">
+      </div>
+
+      <div>
+        <label class="block font-medium text-gray-700 mb-1">Catégorie</label>
+        <input type="text" name="categorie" value="{{ projet.categorie or '' }}"
+               class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-blue-400 focus:border-blue-400">
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+      <div>
+        <label class="block font-medium text-gray-700 mb-1">Statut</label>
+        <input type="text" name="statut" value="{{ projet.statut or '' }}"
+               class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-blue-400 focus:border-blue-400">
+      </div>
+
+      <div>
+        <label class="block font-medium text-gray-700 mb-1">Description</label>
+        <textarea name="description" rows="2"
+                  class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-blue-400 focus:border-blue-400">{{ projet.description }}</textarea>
+      </div>
+    </div>
+
+    <div class="mt-8">
+      <button type="submit"
+              class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg shadow-lg">
+        💾 Enregistrer les informations du projet
+      </button>
+      <a href="{{ url_for('projet.liste_projets') }}"
+         class="ml-4 text-blue-600 hover:underline">← Retour à la liste</a>
+    </div>
+  </form>
+
+
+
+  <!-- =============================================== -->
+  <!-- 🔹 BLOC 2️⃣ : VALEURS MÉTIER (une par une) -->
+  <!-- =============================================== -->
+  <div class="bg-white shadow-md rounded-lg border border-gray-200 mb-10">
+    <h2 class="text-2xl font-semibold text-blue-600 px-6 pt-6 mb-4">Valeurs métier</h2>
+
+    <table class="min-w-full border border-gray-300 rounded-lg mb-6">
+      <thead class="bg-blue-600 text-white">
+        <tr>
+          <th class="px-4 py-2 text-left w-1/3">Libellé</th>
+          <th class="px-4 py-2 text-left w-1/3">Type</th>
+          <th class="px-4 py-2 text-left w-1/3">Valeur</th>
+          <th class="px-4 py-2 text-center w-20">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for valeur in valeurs %}
+        <tr class="border-b hover:bg-gray-50">
+          <td class="px-4 py-2 font-medium text-gray-800">{{ valeur.libelle }}</td>
+
+          <td class="px-4 py-2">
+            <select id="type_{{ loop.index }}" class="border border-gray-300 rounded-lg px-3 py-1 w-full"
+                    onchange="updateValeurs('{{ loop.index }}')">
+              <option value="">-- Sélectionner --</option>
+              {% for opt in dropdowns[valeur.libelle] | groupby('type_libelle') %}
+                <option value="{{ opt.grouper }}" {% if opt.grouper == valeur.type_libelle %}selected{% endif %}>
+                  {{ opt.grouper }}
+                </option>
+              {% endfor %}
+            </select>
+          </td>
+
+          <td class="px-4 py-2">
+            <form method="POST"
+                  action="{{ url_for('projet.update_valeur_metier', projet_id=projet.id, libelle=valeur.libelle) }}"
+                  id="form_{{ loop.index }}" class="flex items-center space-x-2">
+              <select name="nouvelle_valeur_id" id="valeur_{{ loop.index }}"
+                      class="border border-gray-300 rounded-lg px-3 py-1 w-full">
+                {% for option in dropdowns[valeur.libelle] if option.type_libelle == valeur.type_libelle %}
+                  <option value="{{ option.id }}" {% if option.id == valeur.id_valeur_metier %}selected{% endif %}>
+                    {{ option.valeur_libelle }}
+                  </option>
+                {% endfor %}
+              </select>
+              <button type="submit"
+                      class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg shadow">
+                💾
+              </button>
+            </form>
+          </td>
+
+          <td></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+
+
+  <!-- =================================================== -->
+  <!-- 🔹 BLOC 3️⃣ : COMPLEXITÉ (tout enregistrer ensemble) -->
+  <!-- =================================================== -->
+  <form method="POST" action="{{ url_for('projet.update_all_complexites', projet_id=projet.id) }}"
+        class="bg-white shadow-md rounded-lg border border-gray-200">
+    <h2 class="text-2xl font-semibold text-blue-600 px-6 pt-6 mb-4">Complexité du projet</h2>
+
+    <table class="min-w-full border border-gray-300 rounded-lg mb-6">
+      <thead class="bg-blue-600 text-white">
+        <tr>
+          <th class="px-4 py-2 text-left w-1/3">Libellé</th>
+          <th class="px-4 py-2 text-left w-1/3">Type</th>
+          <th class="px-4 py-2 text-left w-1/3">Valeur</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for comp in complexites %}
+        <tr class="border-b hover:bg-gray-50">
+          <td class="px-4 py-2 font-medium text-gray-800">{{ comp.libelle }}</td>
+
+          <td class="px-4 py-2">
+            <select id="type_c{{ loop.index }}" class="border border-gray-300 rounded-lg px-3 py-1 w-full"
+                    onchange="updateComplexite('{{ loop.index }}')">
+              <option value="">-- Sélectionner --</option>
+              {% for opt in dropdowns_complexite[comp.libelle] | groupby('type_libelle') %}
+                <option value="{{ opt.grouper }}" {% if opt.grouper == comp.type_libelle %}selected{% endif %}>
+                  {{ opt.grouper }}
+                </option>
+              {% endfor %}
+            </select>
+          </td>
+
+          <td class="px-4 py-2">
+            <select name="complexite_{{ comp.libelle }}" id="valeur_c{{ loop.index }}"
+                    class="border border-gray-300 rounded-lg px-3 py-1 w-full">
+              <option value="">-- Sélectionner --</option>
+              {% for option in dropdowns_complexite[comp.libelle] if option.type_libelle == comp.type_libelle %}
+                <option value="{{ option.id }}" {% if option.id == comp.id_complexite %}selected{% endif %}>
+                  {{ option.valeur_libelle }}
+                </option>
+              {% endfor %}
+            </select>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <div class="px-6 pb-6">
+      <button type="submit"
+              class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg shadow-lg">
+        💾 Enregistrer toutes les complexités
+      </button>
+    </div>
+  </form>
+</div>
+
+
+<!-- ================================================== -->
+<!-- SCRIPT JS POUR LA MISE À JOUR DYNAMIQUE DES LISTES -->
+<!-- ================================================== -->
+<script>
+  const allOptions = {{ dropdowns | tojson }};
+  const allComplexite = {{ dropdowns_complexite | tojson }};
+
+  function updateValeurs(index) {
+    const typeSelect = document.getElementById(`type_${index}`);
+    const valeurSelect = document.getElementById(`valeur_${index}`);
+    const selectedType = typeSelect.value;
+    const libelle = typeSelect.closest("tr").querySelector("td").innerText.trim();
+    valeurSelect.innerHTML = "";
+
+    if (!selectedType) {
+      valeurSelect.innerHTML = '<option value="">-- Sélectionner un type --</option>';
+      return;
+    }
+
+    const options = allOptions[libelle].filter(o => o.type_libelle === selectedType);
+    for (const opt of options) {
+      const optionEl = document.createElement("option");
+      optionEl.value = opt.id;
+      optionEl.textContent = opt.valeur_libelle;
+      valeurSelect.appendChild(optionEl);
+    }
+  }
+
+  function updateComplexite(index) {
+    const typeSelect = document.getElementById(`type_c${index}`);
+    const valeurSelect = document.getElementById(`valeur_c${index}`);
+    const selectedType = typeSelect.value;
+    const libelle = typeSelect.closest("tr").querySelector("td").innerText.trim();
+    valeurSelect.innerHTML = "";
+
+    if (!selectedType) {
+      valeurSelect.innerHTML = '<option value="">-- Sélectionner un type --</option>';
+      return;
+    }
+
+    const options = allComplexite[libelle].filter(o => o.type_libelle === selectedType);
+    for (const opt of options) {
+      const optionEl = document.createElement("option");
+      optionEl.value = opt.id;
+      optionEl.textContent = opt.valeur_libelle;
+      valeurSelect.appendChild(optionEl);
+    }
+  }
+</script>
+{% endblock %}

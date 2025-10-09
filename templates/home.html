@@ -26,25 +26,23 @@
   <!-- Main content -->
   <main class="max-w-4xl mx-auto mt-20 p-8 bg-white shadow-2xl rounded-2xl text-center">
     <h2 class="text-3xl font-bold text-[var(--biat-blue)] mb-6">Bienvenue sur le portail de gestion des demandes</h2>
-    <p class="text-gray-700 text-lg mb-10">Veuillez choisir une action :</p>
+    <p class="text-gray-700 text-lg mb-10">Veuillez choisir une action pour commencer :</p>
 
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-8">
-      <!-- Créer une nouvelle demande -->
-      <a href="{{ url_for('interface1') }}"
-         class="bg-[var(--biat-orange)] text-white px-6 py-6 rounded-xl shadow-lg hover:bg-orange-500 transition flex flex-col items-center justify-center">
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-8">
+      <!-- Lien vers formulaire -->
+      <a href="{{ url_for('interface1') }}" class="bg-[var(--biat-orange)] text-white px-6 py-6 rounded-xl shadow-lg hover:bg-orange-500 transition flex flex-col items-center justify-center">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+        </svg>
         <span class="font-semibold text-lg">Créer une nouvelle demande</span>
       </a>
 
-      <!-- Suivi -->
-      <a href="{{ url_for('suivi') }}"
-         class="bg-[var(--biat-blue)] text-white px-6 py-6 rounded-xl shadow-lg hover:bg-blue-900 transition flex flex-col items-center justify-center">
+      <!-- Lien vers suivi --> 
+      <a href="{{ url_for('suivi') }}" class="bg-[var(--biat-blue)] text-white px-6 py-6 rounded-xl shadow-lg hover:bg-blue-900 transition flex flex-col items-center justify-center">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+        </svg>
         <span class="font-semibold text-lg">Suivre une demande</span>
-      </a>
-
-      <!-- Import Excel -->
-      <a href="{{ url_for('import.import_excel') }}"
-         class="bg-green-600 text-white px-6 py-6 rounded-xl shadow-lg hover:bg-green-700 transition flex flex-col items-center justify-center">
-        <span class="font-semibold text-lg">Importer un fichier Excel</span>
       </a>
     </div>
   </main>

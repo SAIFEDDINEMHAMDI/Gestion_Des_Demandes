@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Liste des Projets{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-6 py-10">
+  <h1 class="text-3xl font-bold mb-8 text-blue-600">Liste des projets importés</h1>
+
+  <table class="w-full border border-gray-200 rounded-lg shadow-sm bg-white">
+    <thead class="bg-blue-50">
+      <tr>
+        <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Titre</th>
+        <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Description du projet</th>
+        <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Score WSJF</th>
+        <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Estimation JH</th>
+        <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Statut</th>
+        <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Date de MEP</th>
+          <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Retenu ? </th>
+        <th class="px-4 py-3 text-center text-sm font-semibold text-gray-700">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in projet %}
+      <tr class="border-t hover:bg-blue-50 transition">
+        <td class="px-4 py-3">{{ p.titre }}</td>
+        <td class="px-4 py-3">{{ p.categorie }}</td>
+        <td class="px-4 py-3 text-center">{{ p.score_wsjf }}</td>
+        <td class="px-4 py-3 text-center">{{ p.estimation_jh }}</td>
+        <td class="px-4 py-3">{{ p.statut }}</td>
+           <td class="px-4 py-3">{{ p.date_mep }}</td>
+        <td class="px-4 py-3 text-center">{{ p.retenu }}</td>
+        <td class="px-4 py-3 text-center">
+ <a href="{{ url_for('projet.modifier_projet', projet_id=p.id) }}"
+   class="text-blue-600 hover:underline">📝 Modifier</a>
+</td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="7" class="text-center py-6 text-gray-500 italic">
+          Aucun projet trouvé.
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!--<div class="mt-6">
+    <a href="{{ url_for('import_excel.import_excel') }}"
+       class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-full shadow-lg">
+       ⬅ Retour à l’import
+    </a>
+  </div>-->
+</div>
+{% endblock %}

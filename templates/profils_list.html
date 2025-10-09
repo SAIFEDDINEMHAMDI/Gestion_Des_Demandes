@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+{% block title %}Profils{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-8 py-10">
+  <h1 class="text-3xl font-bold mb-8 text-blue-600">Gestion des Profils</h1>
+
+  <!-- Bouton Ajouter -->
+  <div class="mb-6 flex justify-end">
+    <button onclick="openAddModal()"
+            class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-full shadow-lg">
+      ➕ Ajouter un profil
+    </button>
+  </div>
+
+  <!-- Tableau -->
+  <div class="overflow-x-auto shadow-xl rounded-lg border border-gray-200">
+    <table class="min-w-full bg-white divide-y divide-gray-200">
+      <thead class="bg-gray-100">
+        <tr>
+          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Nom</th>
+          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Description</th>
+          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Build Ratio</th>
+          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Run Ratio</th>
+          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Heures Base</th>
+          <th class="px-6 py-3 text-center text-sm font-semibold text-gray-700">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-200">
+        {% for p in profils %}
+        <tr class="hover:bg-gray-50 transition">
+          <td class="px-6 py-4 text-sm text-gray-800">{{ p.nom }}</td>
+          <td class="px-6 py-4 text-sm text-gray-700">{{ p.description }}</td>
+          <td class="px-6 py-4 text-sm text-gray-700">{{ p.build_ratio }}%</td>
+          <td class="px-6 py-4 text-sm text-gray-700">{{ p.run_ratio }}%</td>
+          <td class="px-6 py-4 text-sm text-gray-700">{{ p.heures_base }}</td>
+          <td class="px-6 py-4 text-center">
+            <div class="flex items-center justify-center gap-3">
+              <button type="button"
+                      onclick='openEditModal({{ p.id|tojson }}, {{ p.nom|tojson }}, {{ p.description|tojson }}, {{ p.build_ratio|tojson }}, {{ p.run_ratio|tojson }}, {{ p.heures_base|tojson }})'
+                      class="p-2 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-600"
+                      title="Modifier">✏️</button>
+              <form method="POST" action="{{ url_for('profils.supprimer_profil', id=p.id) }}" class="inline">
+                <button type="submit" onclick="return confirm('Supprimer {{ p.nom }} ?')"
+                        class="p-2 rounded-full bg-red-50 hover:bg-red-100 text-red-600" title="Supprimer">🗑️</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="6" class="text-center px-6 py-6 text-gray-500">Aucun profil trouvé.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ===== MODAL AJOUT ===== -->
+<div id="addModal" class="fixed inset-0 hidden bg-gray-900 bg-opacity-50 flex items-center justify-center z-50">
+  <div id="addModalContent" class="bg-white rounded-lg shadow-lg w-full max-w-md p-6 transform scale-95 opacity-0 transition-all duration-300 ease-out">
+    <h2 class="text-xl font-bold mb-4 text-blue-600">Ajouter un Profil</h2>
+    <form method="POST" action="{{ url_for('profils.ajouter_profil') }}">
+      <div class="mb-3">
+        <label class="block text-sm font-medium">Nom</label>
+        <input type="text" name="nom" required class="w-full border px-3 py-2 rounded">
+      </div>
+      <div class="mb-3">
+        <label class="block text-sm font-medium">Description</label>
+        <textarea name="description" class="w-full border px-3 py-2 rounded"></textarea>
+      </div>
+      <div class="mb-3">
+        <label class="block text-sm font-medium">Build Ratio</label>
+        <input type="number" name="build_ratio" value="70" class="w-full border px-3 py-2 rounded">
+      </div>
+      <div class="mb-3">
+        <label class="block text-sm font-medium">Run Ratio</label>
+        <input type="number" name="run_ratio" value="30" class="w-full border px-3 py-2 rounded">
+      </div>
+      <div class="mb-3">
+        <label class="block text-sm font-medium">Heures Base</label>
+        <input type="number" name="heures_base" value="35" class="w-full border px-3 py-2 rounded">
+      </div>
+      <div class="flex justify-end gap-2 mt-4">
+        <button type="button" onclick="closeAddModal()" class="px-4 py-2 rounded bg-gray-200">Annuler</button>
+        <button type="submit" class="px-4 py-2 rounded bg-blue-600 text-white">Enregistrer</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ===== MODAL EDIT ===== -->
+<div id="editModal" class="fixed inset-0 hidden bg-gray-900 bg-opacity-50 flex items-center justify-center z-50">
+  <div id="editModalContent" class="bg-white rounded-lg shadow-lg w-full max-w-md p-6 transform scale-95 opacity-0 transition-all duration-300 ease-out">
+    <h2 class="text-xl font-bold mb-4 text-blue-600">Modifier le Profil</h2>
+    <form id="editForm" method="POST">
+      <div class="mb-3">
+        <label class="block text-sm font-medium">Nom</label>
+        <input type="text" id="editNom" name="nom" class="w-full border px-3 py-2 rounded">
+      </div>
+      <div class="mb-3">
+        <label class="block text-sm font-medium">Description</label>
+        <textarea id="editDescription" name="description" class="w-full border px-3 py-2 rounded"></textarea>
+      </div>
+      <div class="mb-3">
+        <label class="block text-sm font-medium">Build Ratio</label>
+        <input type="number" id="editBuild" name="build_ratio" class="w-full border px-3 py-2 rounded">
+      </div>
+      <div class="mb-3">
+        <label class="block text-sm font-medium">Run Ratio</label>
+        <input type="number" id="editRun" name="run_ratio" class="w-full border px-3 py-2 rounded">
+      </div>
+      <div class="mb-3">
+        <label class="block text-sm font-medium">Heures Base</label>
+        <input type="number" id="editHeures" name="heures_base" class="w-full border px-3 py-2 rounded">
+      </div>
+      <div class="flex justify-end gap-2 mt-4">
+        <button type="button" onclick="closeEditModal()" class="px-4 py-2 rounded bg-gray-200">Annuler</button>
+        <button type="submit" class="px-4 py-2 rounded bg-blue-600 text-white">Mettre à jour</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function openAddModal() {
+  const modal = document.getElementById("addModal");
+  const content = document.getElementById("addModalContent");
+  modal.classList.remove("hidden");
+  setTimeout(() => {
+    content.classList.remove("scale-95","opacity-0");
+    content.classList.add("scale-100","opacity-100");
+  }, 10);
+}
+function closeAddModal() {
+  const modal = document.getElementById("addModal");
+  const content = document.getElementById("addModalContent");
+  content.classList.remove("scale-100","opacity-100");
+  content.classList.add("scale-95","opacity-0");
+  setTimeout(() => modal.classList.add("hidden"), 150);
+}
+
+function openEditModal(id, nom, description, build, run, heures) {
+  document.getElementById("editForm").action = "/profils/modifier/" + id;
+  document.getElementById("editNom").value = nom || '';
+  document.getElementById("editDescription").value = description || '';
+  document.getElementById("editBuild").value = build || '';
+  document.getElementById("editRun").value = run || '';
+  document.getElementById("editHeures").value = heures || '';
+
+  const modal = document.getElementById("editModal");
+  const content = document.getElementById("editModalContent");
+  modal.classList.remove("hidden");
+  setTimeout(() => {
+    content.classList.remove("scale-95","opacity-0");
+    content.classList.add("scale-100","opacity-100");
+  }, 10);
+}
+function closeEditModal() {
+  const modal = document.getElementById("editModal");
+  const content = document.getElementById("editModalContent");
+  content.classList.remove("scale-100","opacity-100");
+  content.classList.add("scale-95","opacity-0");
+  setTimeout(() => modal.classList.add("hidden"), 150);
+}
+</script>
+{% endblock %}

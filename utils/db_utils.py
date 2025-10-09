@@ -3,31 +3,51 @@ import os
 import sqlite3
 import time
 
-# Chemin vers la base SQLite
+# --------------------------------------------------------------------
+# 📁 Chemin vers la base SQLite
+# --------------------------------------------------------------------
 database_path = os.path.join(os.path.dirname(__file__), '..', 'database', 'projets.db')
 os.makedirs(os.path.dirname(database_path), exist_ok=True)
 DB_PATH = database_path
 
 
+# --------------------------------------------------------------------
+# 🔌 Connexion SQLite robuste (avec WAL, timeout, foreign keys)
+# --------------------------------------------------------------------
 def get_connection():
     """
-    Retourne une connexion SQLite courte durée.
-    IMPORTANT: ne PAS remettre journal_mode ici -> ça crée une écriture et peut locker.
+    Retourne une connexion SQLite robuste.
+    Configure WAL + timeouts pour éviter les verrous.
     """
     conn = sqlite3.connect(
         DB_PATH,
-        timeout=30,               # patienter jusqu'à 30s si verrou
+        timeout=60,               # ⏱️ Patiente jusqu'à 60s avant "database is locked"
         check_same_thread=False
     )
     conn.row_factory = sqlite3.Row
-    # Laisse journal_mode/synchronous tranquilles ici !
-    conn.execute("PRAGMA busy_timeout = 30000;")   # OK en per-connection
-    conn.execute("PRAGMA foreign_keys = ON;")      # utile si tu as des FK
+
+    # ✅ PRAGMA essentiels à chaque connexion
+    conn.execute("PRAGMA journal_mode=WAL;")      # Autorise les écritures concurrentes
+    conn.execute("PRAGMA synchronous=NORMAL;")    # Bon compromis vitesse/sécurité
+    conn.execute("PRAGMA foreign_keys = ON;")     # Active les clés étrangères
+    conn.execute("PRAGMA busy_timeout = 60000;")  # Attend 60s avant d'abandonner une écriture
+
     return conn
 
 
+# --------------------------------------------------------------------
+# 🧩 Alias compatible avec les routes Flask (ex: import_excel_routes)
+# --------------------------------------------------------------------
+def get_db():
+    """Alias pour compatibilité avec les routes Flask (utilise get_connection)."""
+    return get_connection()
+
+
+# --------------------------------------------------------------------
+# 🔍 SELECT avec retry automatique
+# --------------------------------------------------------------------
 def query_db(query, args=(), one=False, retries=3, delay=1):
-    """SELECT avec retry doux si la base est momentanément verrouillée."""
+    """Exécute une requête SELECT avec retry doux si la base est momentanément verrouillée."""
     for attempt in range(retries):
         try:
             conn = get_connection()
@@ -43,8 +63,11 @@ def query_db(query, args=(), one=False, retries=3, delay=1):
             raise
 
 
+# --------------------------------------------------------------------
+# ✏️ INSERT / UPDATE / DELETE avec retry automatique
+# --------------------------------------------------------------------
 def execute_db(query, args=(), many=False, retries=3, delay=1):
-    """INSERT/UPDATE/DELETE avec retry doux si la base est momentanément verrouillée."""
+    """Exécute une requête d'écriture avec gestion douce des verrous."""
     for attempt in range(retries):
         try:
             conn = get_connection()
@@ -65,16 +88,18 @@ def execute_db(query, args=(), many=False, retries=3, delay=1):
             raise
 
 
+# --------------------------------------------------------------------
+# 🏗️ Initialisation de la base (création des tables principales)
+# --------------------------------------------------------------------
 def init_db():
-    """Initialise la base + configure WAL UNE SEULE FOIS."""
+    """Initialise la base et configure WAL une seule fois."""
     try:
         conn = sqlite3.connect(DB_PATH, timeout=30, check_same_thread=False)
         conn.row_factory = sqlite3.Row
 
-        # 👇 Configure journal_mode/synchronous une seule fois au démarrage
         cur = conn.cursor()
-        cur.execute("PRAGMA journal_mode=WAL;")     # passage en WAL (écriture unique ici)
-        cur.execute("PRAGMA synchronous=NORMAL;")   # bon compromis perf/sécurité
+        cur.execute("PRAGMA journal_mode=WAL;")
+        cur.execute("PRAGMA synchronous=NORMAL;")
         cur.execute("PRAGMA foreign_keys = ON;")
 
         SCHEMA = """
@@ -116,7 +141,7 @@ def init_db():
             nom TEXT UNIQUE NOT NULL
         );
 
-        -- Utilisateurs
+        -- Table des utilisateurs
         CREATE TABLE IF NOT EXISTS users (
             id TEXT PRIMARY KEY,
             username TEXT UNIQUE NOT NULL,
@@ -200,19 +225,7 @@ def init_db():
             FOREIGN KEY (programme_id) REFERENCES programmes(id)
         );
 
-        -- Répartition phase-profil-programme
-        CREATE TABLE IF NOT EXISTS phase_profils_programme (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            programme_id INTEGER NOT NULL,
-            phase_id INTEGER NOT NULL,
-            profil_id INTEGER NOT NULL,
-            pourcentage REAL NOT NULL,
-            FOREIGN KEY (programme_id) REFERENCES programmes(id),
-            FOREIGN KEY (phase_id) REFERENCES phases(id),
-            FOREIGN KEY (profil_id) REFERENCES profils(id)
-        );
-
-        -- Poids des phases
+        -- Poids phases-programmes
         CREATE TABLE IF NOT EXISTS programme_poids_phases (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             programme_id INTEGER NOT NULL,
@@ -222,10 +235,12 @@ def init_db():
             UNIQUE(programme_id, phase_num)
         );
 
-        -- Valeur métier (retour à ta version)
+        -- Valeur métier
         CREATE TABLE IF NOT EXISTS valeur_metier (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             libelle TEXT NOT NULL,
+            type_libelle TEXT,
+            valeur_libelle TEXT,
             ponderation REAL NOT NULL,
             iuser TEXT,
             idate DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -236,7 +251,7 @@ def init_db():
 
         cur.executescript(SCHEMA)
 
-        # Colonne 'retenu' si absente
+        # Vérifie et ajoute la colonne 'retenu' si absente
         cur.execute("SELECT COUNT(*) FROM pragma_table_info('projets') WHERE name='retenu';")
         if cur.fetchone()[0] == 0:
             cur.execute("ALTER TABLE projets ADD COLUMN retenu INTEGER DEFAULT 0;")
@@ -244,7 +259,8 @@ def init_db():
         conn.commit()
         cur.close()
         conn.close()
-        print("✅ Base initialisée (WAL configuré une seule fois).")
+        print("✅ Base initialisée et configurée avec succès (WAL activé).")
+
     except Exception as e:
         print(f"❌ Erreur init_db: {e}")
         raise

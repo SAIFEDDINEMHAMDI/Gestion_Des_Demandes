@@ -1,4 +1,5 @@
 # backend/app.py
+
 from dotenv import load_dotenv
 import os
 from flask import Flask, render_template, request, redirect, url_for, session, flash
@@ -14,10 +15,14 @@ from routes.collaborateurs_routes import collab_bp
 from routes.caf import caf_bp
 from routes.programmes_routes import programmes_bp
 from routes.projets_routes import projets_bp
-from routes.complexite_routes import complexite_bp
+from routes.valeurs_metier_routes import valeurs_bp
+from routes.import_excel_routes import import_excel_bp
+from routes.complexite_routes import  complexite_bp
 from routes.profils_routes import profils_bp
-from routes.import_execel_routes import import_bp
-
+from routes.projet_routes import projet_bp
+from routes.categorie_routes import categorie_bp
+from routes.statut_routes import statut_bp
+from routes.phase_routes import phase_bp
 # ----------------- CONFIGURATION -----------------
 load_dotenv()
 app = Flask(__name__)
@@ -26,12 +31,17 @@ app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'votre_cle_secrete_super_sec
 # Enregistrement des Blueprints
 app.register_blueprint(collab_bp)
 app.register_blueprint(caf_bp)
+
 app.register_blueprint(profils_bp)
 app.register_blueprint(programmes_bp)
 app.register_blueprint(projets_bp)
+app.register_blueprint(valeurs_bp)
 app.register_blueprint(complexite_bp)
-app.register_blueprint(import_bp)
-
+app.register_blueprint(import_excel_bp)
+app.register_blueprint(projet_bp)
+app.register_blueprint(categorie_bp)
+app.register_blueprint(statut_bp)
+app.register_blueprint(phase_bp)
 # Gestion des uploads
 UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'uploads')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
