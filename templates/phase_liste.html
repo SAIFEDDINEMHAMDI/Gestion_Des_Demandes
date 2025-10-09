@@ -26,7 +26,7 @@
   <div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
     <form method="get" action="{{ url_for('phase.liste_phases') }}" class="flex items-center gap-2">
       <input type="text" name="q" value="{{ request.args.get('q','') }}"
-             placeholder="Rechercher une phase..."
+             placeholder="🔍 Rechercher une phase..."
              class="border border-gray-300 rounded-lg px-4 py-2 text-sm w-80 focus:ring-blue-400 focus:border-blue-400">
       <button type="submit"
               class="bg-white border border-gray-300 px-3 py-2 rounded text-blue-600 hover:text-blue-800 transition">
@@ -34,14 +34,20 @@
       </button>
     </form>
 
+    {% if session.user.role != 'user' %}
     <button onclick="openAddModal()"
-            class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-full shadow-lg">
+            class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-full shadow-lg flex items-center gap-2 transition">
       ➕ Ajouter une phase
     </button>
+    {% else %}
+    <button disabled class="bg-gray-300 text-gray-600 px-5 py-2.5 rounded-full shadow cursor-not-allowed">
+      🔒 Lecture seule
+    </button>
+    {% endif %}
   </div>
 
   <!-- 🔹 Tableau -->
-  <div class="overflow-x-auto shadow-xl rounded-lg border border-gray-200">
+  <div class="overflow-x-auto shadow-lg rounded-lg border border-gray-200">
     <table class="min-w-full bg-white divide-y divide-gray-200">
       <thead class="bg-gray-100">
         <tr>
@@ -53,19 +59,37 @@
         {% for p in phases %}
         <tr class="hover:bg-gray-50 transition">
           <td class="px-6 py-4 text-sm text-gray-800">{{ p.nom }}</td>
-          <td class="px-6 py-4">
+          <td class="px-6 py-4 text-center">
+            {% if session.user.role != 'user' %}
             <div class="flex items-center justify-center gap-3">
+              <!-- Modifier -->
               <button type="button"
                       onclick='openEditModal({{ p.id|tojson }}, {{ p.nom|tojson }})'
-                      class="p-2 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-600"
-                      title="Modifier">✏️</button>
+                      class="inline-flex items-center justify-center p-2 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-600 transition"
+                      title="Modifier">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z"/>
+                  <path fill-rule="evenodd" d="M4 16a1 1 0 011-1h9a1 1 0 110 2H5a1 1 0 01-1-1z" clip-rule="evenodd"/>
+                </svg>
+              </button>
 
-              <form action="{{ url_for('phase.supprimer_phase', id=p.id) }}" method="post" class="inline">
-                <button type="submit" onclick="return confirm('Supprimer {{ p.nom }} ?')"
-                        class="p-2 rounded-full bg-red-50 hover:bg-red-100 text-red-600"
-                        title="Supprimer">🗑️</button>
+              <!-- Supprimer -->
+              <form action="{{ url_for('phase.supprimer_phase', id=p.id) }}" method="post"
+                    onsubmit="return confirm('Supprimer {{ p.nom }} ?')">
+                <button type="submit"
+                        class="inline-flex items-center justify-center p-2 rounded-full bg-red-50 hover:bg-red-100 text-red-600 transition"
+                        title="Supprimer">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5"
+                       fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M6 18L18 6M6 6l12 12"/>
+                  </svg>
+                </button>
               </form>
             </div>
+            {% else %}
+            <span class="text-gray-400 italic text-sm">Lecture seule</span>
+            {% endif %}
           </td>
         </tr>
         {% else %}
@@ -92,6 +116,7 @@
 </div>
 
 <!-- 🔹 MODAL AJOUT -->
+{% if session.user.role != 'user' %}
 <div id="addModal" class="fixed inset-0 hidden bg-gray-900 bg-opacity-50 flex items-center justify-center z-50">
   <div id="addModalContent" class="bg-white rounded-lg shadow-lg w-full max-w-md p-6 transform scale-95 opacity-0 transition-all duration-300 ease-out">
     <h2 class="text-xl font-bold mb-4 text-blue-600">Ajouter une Phase</h2>
@@ -108,8 +133,10 @@
     </form>
   </div>
 </div>
+{% endif %}
 
 <!-- 🔹 MODAL EDIT -->
+{% if session.user.role != 'user' %}
 <div id="editModal" class="fixed inset-0 hidden bg-gray-900 bg-opacity-50 flex items-center justify-center z-50">
   <div id="editModalContent" class="bg-white rounded-lg shadow-lg w-full max-w-md p-6 transform scale-95 opacity-0 transition-all duration-300 ease-out">
     <h2 class="text-xl font-bold mb-4 text-blue-600">Modifier la Phase</h2>
@@ -126,7 +153,9 @@
     </form>
   </div>
 </div>
+{% endif %}
 
+<!-- 🔹 Scripts -->
 <script>
 function openAddModal() {
   const modal = document.getElementById("addModal");
@@ -137,6 +166,7 @@ function openAddModal() {
     content.classList.add("scale-100","opacity-100");
   }, 10);
 }
+
 function closeAddModal() {
   const modal = document.getElementById("addModal");
   const content = document.getElementById("addModalContent");
@@ -144,6 +174,7 @@ function closeAddModal() {
   content.classList.add("scale-95","opacity-0");
   setTimeout(() => modal.classList.add("hidden"), 150);
 }
+
 function openEditModal(id, nom) {
   document.getElementById("editNom").value = nom || '';
   document.getElementById("editForm").action = "/phase/modifier/" + id;
@@ -155,6 +186,7 @@ function openEditModal(id, nom) {
     content.classList.add("scale-100","opacity-100");
   }, 10);
 }
+
 function closeEditModal() {
   const modal = document.getElementById("editModal");
   const content = document.getElementById("editModalContent");

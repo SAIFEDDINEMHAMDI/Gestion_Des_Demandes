@@ -5,13 +5,19 @@
 <div class="max-w-6xl mx-auto px-8 py-10">
   <h1 class="text-3xl font-bold mb-8 text-blue-600">Gestion des Profils</h1>
 
-  <!-- Bouton Ajouter -->
+  <!-- Bouton Ajouter (désactivé pour user) -->
+  {% if session.user.role != 'user' %}
   <div class="mb-6 flex justify-end">
     <button onclick="openAddModal()"
             class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-full shadow-lg">
       ➕ Ajouter un profil
     </button>
   </div>
+  {% else %}
+  <div class="mb-6 flex justify-end">
+   
+  </div>
+  {% endif %}
 
   <!-- Tableau -->
   <div class="overflow-x-auto shadow-xl rounded-lg border border-gray-200">
@@ -34,17 +40,27 @@
           <td class="px-6 py-4 text-sm text-gray-700">{{ p.build_ratio }}%</td>
           <td class="px-6 py-4 text-sm text-gray-700">{{ p.run_ratio }}%</td>
           <td class="px-6 py-4 text-sm text-gray-700">{{ p.heures_base }}</td>
+
+          <!-- ✅ Bloc Actions -->
           <td class="px-6 py-4 text-center">
+            {% if session.user.role != 'user' %}
             <div class="flex items-center justify-center gap-3">
+              <!-- Modifier -->
               <button type="button"
                       onclick='openEditModal({{ p.id|tojson }}, {{ p.nom|tojson }}, {{ p.description|tojson }}, {{ p.build_ratio|tojson }}, {{ p.run_ratio|tojson }}, {{ p.heures_base|tojson }})'
                       class="p-2 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-600"
                       title="Modifier">✏️</button>
+              
+              <!-- Supprimer -->
               <form method="POST" action="{{ url_for('profils.supprimer_profil', id=p.id) }}" class="inline">
                 <button type="submit" onclick="return confirm('Supprimer {{ p.nom }} ?')"
                         class="p-2 rounded-full bg-red-50 hover:bg-red-100 text-red-600" title="Supprimer">🗑️</button>
               </form>
             </div>
+            {% else %}
+            <!-- 🔒 Lecture seule -->
+            <span class="text-gray-400 italic text-sm"></span>
+            {% endif %}
           </td>
         </tr>
         {% else %}
@@ -58,6 +74,7 @@
 </div>
 
 <!-- ===== MODAL AJOUT ===== -->
+{% if session.user.role != 'user' %}
 <div id="addModal" class="fixed inset-0 hidden bg-gray-900 bg-opacity-50 flex items-center justify-center z-50">
   <div id="addModalContent" class="bg-white rounded-lg shadow-lg w-full max-w-md p-6 transform scale-95 opacity-0 transition-all duration-300 ease-out">
     <h2 class="text-xl font-bold mb-4 text-blue-600">Ajouter un Profil</h2>
@@ -89,8 +106,10 @@
     </form>
   </div>
 </div>
+{% endif %}
 
 <!-- ===== MODAL EDIT ===== -->
+{% if session.user.role != 'user' %}
 <div id="editModal" class="fixed inset-0 hidden bg-gray-900 bg-opacity-50 flex items-center justify-center z-50">
   <div id="editModalContent" class="bg-white rounded-lg shadow-lg w-full max-w-md p-6 transform scale-95 opacity-0 transition-all duration-300 ease-out">
     <h2 class="text-xl font-bold mb-4 text-blue-600">Modifier le Profil</h2>
@@ -122,6 +141,7 @@
     </form>
   </div>
 </div>
+{% endif %}
 
 <script>
 function openAddModal() {

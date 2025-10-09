@@ -22,10 +22,12 @@
       </select>
     </form>
 
+    {% if user_role != 'user' %}
     <button onclick="openAddModal()"
             class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-full shadow-lg flex items-center gap-2 transition">
       ➕ Ajouter un collaborateur
     </button>
+    {% endif %}
   </div>
 
   <!-- Tableau -->
@@ -56,7 +58,9 @@
             </span>
           </td>
           <td class="px-6 py-4 text-sm text-indigo-600">{{ collab.affectation }}</td>
-          <td class="px-6 py-4">
+
+          <td class="px-6 py-4 text-center">
+            {% if user_role != 'user' %}
             <div class="flex items-center justify-center gap-3">
               <!-- Modifier -->
               <button type="button"
@@ -83,6 +87,9 @@
                 </button>
               </form>
             </div>
+            {% else %}
+            <span class="text-gray-400 italic text-sm"></span>
+            {% endif %}
           </td>
         </tr>
         {% else %}
@@ -108,6 +115,7 @@
   </div>
 </div>
 
+{% if user_role != 'user' %}
 <!-- MODAL AJOUT -->
 <div id="addModal" class="fixed inset-0 hidden bg-gray-900 bg-opacity-50 flex items-center justify-center z-50">
   <div id="addModalContent"
@@ -188,6 +196,7 @@
     </form>
   </div>
 </div>
+{% endif %}
 
 <script>
   // --- ADD MODAL ---

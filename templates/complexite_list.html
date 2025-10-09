@@ -46,12 +46,25 @@
           <td class="px-6 py-4">
             <div class="flex items-center justify-center gap-3">
               <button type="button"
-                      onclick='openEditModal({{ val.id|tojson }}, {{ val.libelle|tojson }}, {{ val.type_libelle|tojson }}, {{ val.valeur_libelle|tojson }}, {{ val.ponderation|tojson }})'
-                      class="p-2 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-600"
-                      title="Modifier">✏️</button>
+        onclick='openEditModal({{ val.id|tojson }}, {{ val.libelle|tojson }}, {{ val.type_libelle|tojson }}, {{ val.valeur_libelle|tojson }}, {{ val.ponderation|tojson }})'
+        class="p-2 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-600"
+        title="Modifier">
+  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+    <path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z"/>
+    <path fill-rule="evenodd" d="M4 16a1 1 0 011-1h9a1 1 0 110 2H5a1 1 0 01-1-1z" clip-rule="evenodd"/>
+  </svg>
+</button>
               <form action="{{ url_for('complexite.supprimer_complexite', id=val.id) }}" method="post" class="inline">
-                <button type="submit" onclick="return confirm('Supprimer {{ val.libelle }} ?')"
-                        class="p-2 rounded-full bg-red-50 hover:bg-red-100 text-red-600" title="Supprimer">🗑️</button>
+                <button type="submit"
+                onclick="return confirm('Supprimer {{ val.libelle }} ?')"
+                class="p-2 rounded-full bg-red-50 hover:bg-red-100 text-red-600"
+                title="Supprimer">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5"
+               fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
               </form>
             </div>
           </td>

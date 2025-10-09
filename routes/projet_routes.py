@@ -27,7 +27,7 @@ def liste_projets():
 # ===============================
 # Bloc 1️⃣ - Modifier les infos principales du projet
 # ===============================
-@projet_bp.route("/modifier/<int:projet_id>", methods=["GET", "POST"])
+@projet_bp.route('/modifier/<projet_id>', methods=['GET', 'POST'])
 def modifier_projet(projet_id):
     conn = get_db()
     cur = conn.cursor()
@@ -108,7 +108,7 @@ def modifier_projet(projet_id):
         SELECT DISTINCT libelle, id, type_libelle, valeur_libelle
         FROM complexite
         WHERE type_libelle IS NOT NULL AND type_libelle <> ''
-        ORDER BY  id
+        ORDER BY id
     """)
 
     dropdowns_complexite = {}
@@ -149,7 +149,7 @@ def modifier_projet(projet_id):
 # ===============================
 # Bloc 2️⃣ - Mettre à jour une valeur métier à la fois
 # ===============================
-@projet_bp.route("/update_valeur/<int:projet_id>/<libelle>", methods=["POST"])
+@projet_bp.route("/update_valeur/<projet_id>/<libelle>", methods=["POST"])
 def update_valeur_metier(projet_id, libelle):
     conn = get_db()
     cur = conn.cursor()
@@ -184,7 +184,10 @@ def update_valeur_metier(projet_id, libelle):
     return redirect(url_for("projet.modifier_projet", projet_id=projet_id))
 
 
-@projet_bp.route("/update_all_complexites/<int:projet_id>", methods=["POST"])
+# ===============================
+# Bloc 2️⃣ bis - Mise à jour de toutes les complexités
+# ===============================
+@projet_bp.route("/update_all_complexites/<projet_id>", methods=["POST"])
 def update_all_complexites(projet_id):
     conn = get_db()
     cur = conn.cursor()
@@ -222,7 +225,6 @@ def update_all_complexites(projet_id):
             """, (projet_id, valeur_id))
 
     # ✅ 2️⃣ - Recalculer le score WSJF
-    # Somme des valeurs métier pondérées
     somme_valeur_metier = query_db("""
         SELECT SUM(vm.valeur_libelle * vm.ponderation) AS total
         FROM valeur_metier_projet vmp
@@ -230,18 +232,15 @@ def update_all_complexites(projet_id):
         WHERE vmp.id_projet = ?
     """, [projet_id], one=True)["total"] or 0
 
-    # Somme des complexités pondérées
     somme_complexite = query_db("""
         SELECT SUM(c.valeur_libelle * c.ponderation) AS total
         FROM complexite_projet cp
         JOIN complexite c ON c.id = cp.id_complexite
         WHERE cp.id_projet = ?
-    """, [projet_id], one=True)["total"] or 1  # éviter division par 0
+    """, [projet_id], one=True)["total"] or 1
 
-    # Calcul final
     score_wsjf = round(somme_valeur_metier / somme_complexite, 2)
 
-    # Mise à jour du projet
     cur.execute("""
         UPDATE Projet
         SET score_wsjf_projet = ?, udate = DATETIME('now'), uuser = 1
@@ -249,6 +248,23 @@ def update_all_complexites(projet_id):
     """, (score_wsjf, projet_id))
 
     conn.commit()
-
     flash(f"✅ Complexités enregistrées et score WSJF recalculé : {score_wsjf}", "success")
     return redirect(url_for("projet.modifier_projet", projet_id=projet_id))
+
+
+# ===============================
+# Bloc 3️⃣ - Supprimer un projet
+# ===============================
+@projet_bp.route("/supprimer/<projet_id>", methods=["POST"])
+def supprimer_projet(projet_id):
+    conn = get_db()
+    cur = conn.cursor()
+
+    try:
+        cur.execute("DELETE FROM Projet WHERE id = ?", [projet_id])
+        conn.commit()
+        flash("🗑️ Projet supprimé avec succès.", "success")
+    except Exception as e:
+        flash(f"❌ Erreur lors de la suppression : {e}", "error")
+
+    return redirect(url_for("priorites"))

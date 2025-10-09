@@ -1,5 +1,4 @@
-# backend/app.py
-
+# app.py
 from dotenv import load_dotenv
 import os
 from flask import Flask, render_template, request, redirect, url_for, session, flash
@@ -9,20 +8,21 @@ from werkzeug.utils import secure_filename
 from services.wsjf_calculator import calculate_wsjf
 from utils.db_utils import execute_db, init_db, query_db
 from werkzeug.security import generate_password_hash, check_password_hash
+from utils.decorators import readonly_if_user  # ✅ pour restreindre certaines actions
 
 # ----------------- IMPORT DES BLUEPRINTS -----------------
 from routes.collaborateurs_routes import collab_bp
 from routes.caf import caf_bp
 from routes.programmes_routes import programmes_bp
 from routes.projets_routes import projets_bp
-from routes.valeurs_metier_routes import valeurs_bp
 from routes.import_excel_routes import import_excel_bp
-from routes.complexite_routes import  complexite_bp
+from routes.complexite_routes import complexite_bp
 from routes.profils_routes import profils_bp
 from routes.projet_routes import projet_bp
 from routes.categorie_routes import categorie_bp
 from routes.statut_routes import statut_bp
 from routes.phase_routes import phase_bp
+
 # ----------------- CONFIGURATION -----------------
 load_dotenv()
 app = Flask(__name__)
@@ -31,67 +31,102 @@ app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'votre_cle_secrete_super_sec
 # Enregistrement des Blueprints
 app.register_blueprint(collab_bp)
 app.register_blueprint(caf_bp)
-
 app.register_blueprint(profils_bp)
 app.register_blueprint(programmes_bp)
 app.register_blueprint(projets_bp)
-app.register_blueprint(valeurs_bp)
 app.register_blueprint(complexite_bp)
 app.register_blueprint(import_excel_bp)
 app.register_blueprint(projet_bp)
 app.register_blueprint(categorie_bp)
 app.register_blueprint(statut_bp)
 app.register_blueprint(phase_bp)
+
 # Gestion des uploads
 UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'uploads')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# Initialisation DB au démarrage
+# Initialisation DB
 init_db()
 
-# ----------------- ROUTES -----------------
+# ----------------- HELPERS / DÉCORATEURS -----------------
+def login_required(func):
+    """Décorateur simple pour protéger les routes."""
+    from functools import wraps
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        if 'user' not in session:
+            flash("🔒 Vous devez être connecté pour accéder à cette page.", "warning")
+            return redirect(url_for('login'))
+        return func(*args, **kwargs)
+    return wrapper
 
+
+def has_role(required_roles):
+    """Décorateur pour restreindre certaines routes à un ou plusieurs rôles."""
+    from functools import wraps
+    if isinstance(required_roles, str):
+        roles = [required_roles]
+    else:
+        roles = list(required_roles)
+
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            user = session.get('user')
+            if not user or user.get('role') not in roles:
+                flash("❌ Accès refusé (droits insuffisants).", "error")
+                return redirect(url_for('home'))
+            return func(*args, **kwargs)
+        return wrapper
+    return decorator
+
+
+# ----------------- ROUTES -----------------
 @app.route('/home')
+@login_required
 def home():
     return render_template('home.html')
 
-@app.route('/create_admin', methods=['GET', 'POST'])
-def create_admin():
-    """Créer un administrateur si besoin"""
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-        hashed_password = generate_password_hash(password)
-        user_id = str(uuid.uuid4())
-
-        try:
-            execute_db("""
-                INSERT INTO users (id, username, password, role)
-                VALUES (?, ?, ?, ?)
-            """, [user_id, username, hashed_password, 'admin'])
-            flash("✅ Utilisateur admin créé avec succès.", "success")
-            return redirect(url_for('login'))
-        except Exception:
-            flash("❌ Ce nom d'utilisateur existe déjà.", "danger")
-    return render_template('create_admin.html')
-
 
 # ----------------- LOGIN / LOGOUT -----------------
-
 @app.route('/', methods=['GET', 'POST'])
 def login():
-    """Page de connexion"""
+    """Page de connexion."""
     if request.method == 'POST':
-        username = request.form['username']
+        username = request.form['username'].strip()
         password = request.form['password']
 
         user = query_db("SELECT * FROM users WHERE username = ?", [username], one=True)
-        if user and check_password_hash(user['password'], password):
-            session['user'] = dict(user)
-            flash("✅ Connexion réussie", "success")
-            return redirect(url_for('priorites'))
+        if user:
+            stored = user['password'] or ''
+            ok = False
+            try:
+                ok = check_password_hash(stored, password)
+            except Exception:
+                ok = False
+
+            # ✅ fallback pour tests avec mot de passe non haché
+            if not ok and stored == password:
+                ok = True
+
+            if ok:
+                # ✅ Conversion Row → dict pour éviter AttributeError
+                user_dict = dict(user)
+
+                # ✅ Stocker proprement le rôle dans la session
+                session['user'] = {
+                    'id': user_dict.get('id'),
+                    'username': user_dict.get('username'),
+                    'role': user_dict.get('role', 'user')
+                }
+
+                flash("✅ Connexion réussie", "success")
+                return redirect(url_for('priorites'))
+            else:
+                flash("❌ Nom d'utilisateur ou mot de passe incorrect", "danger")
         else:
             flash("❌ Nom d'utilisateur ou mot de passe incorrect", "danger")
+
     return render_template('login.html')
 
 
@@ -104,8 +139,8 @@ def logout():
 
 
 # ----------------- INTERFACES MULTI-ÉTAPES -----------------
-
 @app.route('/interface1', methods=['GET', 'POST'])
+@login_required
 def interface1():
     categorie = query_db("SELECT * FROM categorie")
     if request.method == 'POST':
@@ -123,6 +158,7 @@ def interface1():
 
 
 @app.route('/interface2', methods=['GET', 'POST'])
+@login_required
 def interface2():
     if 'form1' not in session:
         return redirect(url_for('interface1'))
@@ -133,6 +169,7 @@ def interface2():
 
 
 @app.route('/interface3', methods=['GET', 'POST'])
+@login_required
 def interface3():
     if 'form1' not in session or 'form2' not in session:
         return redirect(url_for('interface1'))
@@ -144,11 +181,9 @@ def interface3():
         form3 = request.form.to_dict()
         all_data = {**form1, **form2, **form3, 'project_id': project_id}
 
-        # Calcul WSJF
         resultats = calculate_wsjf(all_data)
         score_wsjf, complexite, jh_estime = resultats['score_wsjf'], resultats['complexite'], resultats['jh_estime']
 
-        # Trouver release associée
         date_mep = all_data.get('date_mep')
         release_info = query_db("""
             SELECT id FROM releases WHERE ? BETWEEN debut AND fin ORDER BY debut DESC LIMIT 1
@@ -157,22 +192,22 @@ def interface3():
 
         try:
             execute_db('''INSERT INTO projets (
-                id, titre, description, alignement_strategic, impact_pnb, impact_satisfaction, date_mep, 
-                conquerir_client, maitrise_couts, attenuation_menaces, creation_opportunites, 
-                conditions_techniques, deadline_reglementaire, pression_concurrence, echeances_strategiques, 
-                urgence_obsolescence, dependances_projets, q1, q2, q3, q4, q5, q6, q7, q8, q9, q10, 
+                id, titre, description, alignement_strategic, impact_pnb, impact_satisfaction, date_mep,
+                conquerir_client, maitrise_couts, attenuation_menaces, creation_opportunites,
+                conditions_techniques, deadline_reglementaire, pression_concurrence, echeances_strategiques,
+                urgence_obsolescence, dependances_projets, q1, q2, q3, q4, q5, q6, q7, q8, q9, q10,
                 score_wsjf, release_id, categorie_id, statut, duree_estimee_jh, complexite)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-                (project_id, all_data['titre'], all_data['description'], all_data['alignement_strategic'],
-                 all_data['impact_pnb'], all_data['impact_satisfaction'], all_data['date_mep'],
-                 all_data['conquerir_client'], all_data['maitrise_couts'],
-                 all_data['attenuation_menaces'], all_data['creation_opportunites'],
-                 all_data['conditions_techniques'], all_data['deadline_reglementaire'],
-                 all_data['pression_concurrence'], all_data['echeances_strategiques'],
-                 all_data['urgence_obsolescence'], all_data['dependances_projets'],
-                 all_data['q1'], all_data['q2'], all_data['q3'], all_data['q4'],
-                 all_data['q5'], all_data['q6'], all_data['q7'], all_data['q8'],
-                 all_data['q9'], all_data['q10'],
+                (project_id, all_data['titre'], all_data['description'], all_data.get('alignement_strategic'),
+                 all_data.get('impact_pnb'), all_data.get('impact_satisfaction'), all_data['date_mep'],
+                 all_data.get('conquerir_client'), all_data.get('maitrise_couts'),
+                 all_data.get('attenuation_menaces'), all_data.get('creation_opportunites'),
+                 all_data.get('conditions_techniques'), all_data.get('deadline_reglementaire'),
+                 all_data.get('pression_concurrence'), all_data.get('echeances_strategiques'),
+                 all_data.get('urgence_obsolescence'), all_data.get('dependances_projets'),
+                 all_data.get('q1'), all_data.get('q2'), all_data.get('q3'), all_data.get('q4'),
+                 all_data.get('q5'), all_data.get('q6'), all_data.get('q7'), all_data.get('q8'),
+                 all_data.get('q9'), all_data.get('q10'),
                  score_wsjf, release_id, all_data.get('categorie_id'),
                  all_data.get('statut', 'En attente'), jh_estime, complexite))
             session['project_id'] = project_id
@@ -185,8 +220,8 @@ def interface3():
 
 
 # ----------------- RESULTATS -----------------
-
 @app.route('/resultat')
+@login_required
 def resultat():
     project_id = session.get('project_id')
     if not project_id:
@@ -196,14 +231,14 @@ def resultat():
         return "Projet non trouvé", 404
     try:
         date_affichee = datetime.strptime(projet['date_mep'], '%Y-%m-%d').strftime('%d/%m/%Y')
-    except ValueError:
+    except Exception:
         date_affichee = projet['date_mep']
     return render_template('resultat.html', result=projet, date_mep=date_affichee)
 
 
 # ----------------- PRIORITES -----------------
-
 @app.route('/priorites')
+@login_required
 def priorites():
     filtre_retenu = request.args.get('retenu')
     query = """
@@ -219,63 +254,47 @@ def priorites():
     return render_template('priorites.html', projets=projets, filtre_retenu=filtre_retenu)
 
 
-@app.route('/modifier-priorite/<id>', methods=['GET', 'POST'])
-def modifier_priorite(id):
-    projet = query_db("SELECT * FROM projets WHERE id = ?", [id], one=True)
-    categories = query_db("SELECT * FROM categorie")
-    programmes = query_db("SELECT * FROM programmes")
-
-    if not projet:
-        flash("❌ Projet introuvable", "danger")
-        return redirect(url_for('priorites'))
-
-    if request.method == 'POST':
-        form_data = request.form.to_dict()
-        resultats = calculate_wsjf(form_data)
-        score_wsjf, complexite, jh_estime = resultats['score_wsjf'], resultats['complexite'], resultats['jh_estime']
-
-        champs = [
-            'titre', 'description', 'alignement_strategic', 'impact_pnb', 'impact_satisfaction',
-            'date_mep', 'conquerir_client', 'maitrise_couts', 'attenuation_menaces',
-            'creation_opportunites', 'conditions_techniques', 'deadline_reglementaire',
-            'pression_concurrence', 'echeances_strategiques', 'urgence_obsolescence',
-            'dependances_projets', 'q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7', 'q8', 'q9', 'q10',
-            'categorie_id', 'statut', 'programme_id'
-        ]
-        valeurs = [form_data.get(champ, '') for champ in champs]
-        valeurs.extend([score_wsjf, jh_estime, complexite, id])
-
-        update_query = """
-            UPDATE projets SET 
-                titre = ?, description = ?, alignement_strategic = ?, impact_pnb = ?, impact_satisfaction = ?, 
-                date_mep = ?, conquerir_client = ?, maitrise_couts = ?, attenuation_menaces = ?, creation_opportunites = ?, 
-                conditions_techniques = ?, deadline_reglementaire = ?, pression_concurrence = ?, echeances_strategiques = ?, urgence_obsolescence = ?, 
-                dependances_projets = ?, q1 = ?, q2 = ?, q3 = ?, q4 = ?, q5 = ?, q6 = ?, q7 = ?, q8 = ?, q9 = ?, q10 = ?, 
-                categorie_id = ?, statut = ?, programme_id = ?, score_wsjf = ?, duree_estimee_jh = ?, complexite = ?
-            WHERE id = ?
-        """
-        execute_db(update_query, valeurs)
-        flash("✅ Projet mis à jour avec recalcul du WSJF et de la charge", "success")
-        return redirect(url_for('priorites'))
-
-    return render_template('modifier_priorite.html', projet=dict(projet), categories=categories, programmes=programmes)
-
-
 @app.route('/toggle_retenu/<string:projet_id>', methods=['POST'])
+@login_required
+@readonly_if_user  # ✅ les users ne peuvent plus modifier
 def toggle_retenu(projet_id):
     projet = query_db("SELECT retenu FROM projets WHERE id = ?", [projet_id], one=True)
     if projet is None:
         flash("❌ Projet introuvable", "danger")
     else:
         nouveau_statut = 0 if projet['retenu'] else 1
-        execute_db("UPDATE projets SET retenu = ? WHERE id = ?",
-                   [nouveau_statut, projet_id])
+        execute_db("UPDATE projets SET retenu = ? WHERE id = ?", [nouveau_statut, projet_id])
         flash("✅ Statut 'retenu' mis à jour", "success")
     return redirect(url_for('priorites'))
 
 
-# ----------------- MAIN -----------------
+# ----------------- UTILITAIRES ADMIN -----------------
+@app.route('/create_admin', methods=['GET', 'POST'])
+@login_required
+@has_role(['superadmin', 'admin'])
+def create_admin():
+    """Créer un administrateur via interface (protégé par role)."""
+    if request.method == 'POST':
+        username = request.form['username'].strip()
+        password = request.form['password']
+        role = request.form.get('role', 'admin')
+        hashed_password = generate_password_hash(password)
+        user_id = str(uuid.uuid4())
 
+        try:
+            execute_db("""
+                INSERT INTO users (id, username, password, role)
+                VALUES (?, ?, ?, ?)
+            """, [user_id, username, hashed_password, role])
+            flash("✅ Utilisateur créé avec succès.", "success")
+            return redirect(url_for('priorites'))
+        except Exception as e:
+            flash(f"❌ Erreur lors de la création : {e}", "danger")
+
+    return render_template('create_admin.html')
+
+
+# ----------------- MAIN -----------------
 if __name__ == '__main__':
     host = "127.0.0.1"
     port = 5000

@@ -1,155 +1,111 @@
-<!-- templates/priorites.html -->
 {% extends "base.html" %}
-{% block title %}Priorisation des Projets - WSJF & JH{% endblock %}
+{% block title %}Priorités des Projets{% endblock %}
 
 {% block content %}
-<div class="max-w-6xl mx-auto px-4 py-6">
-    <h1 class="text-3xl font-bold text-gray-800 mb-6">Priorisation des Projets</h1>
-    <p class="mb-6 text-gray-600">
-        Projets triés par score WSJF décroissant avec estimation en jour-homme (JH).
-    </p>
+<div class="max-w-7xl mx-auto px-6 py-8">
+  <h1 class="text-3xl font-bold mb-6 text-blue-600">Priorités des Projets</h1>
 
-    <!-- Boutons de filtre -->
-    <div class="mb-6 flex space-x-4">
-        <a href="{{ url_for('priorites') }}"
-           class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm shadow-md {% if not filtre_retenu %}ring-2 ring-blue-400{% endif %}">
-            📋 Tous les projets
-        </a>
-        <a href="{{ url_for('priorites', retenu=1) }}"
-           class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm shadow-md {% if filtre_retenu == '1' %}ring-2 ring-green-400{% endif %}">
-            ✅ Projets retenus
-        </a>
+  <!-- Filtres -->
+  <div class="flex flex-wrap items-center justify-between mb-6">
+    <div class="flex items-center gap-2">
+      <a href="{{ url_for('priorites') }}"
+         class="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-100 transition">
+        Tous les projets
+      </a>
+      <a href="{{ url_for('priorites', retenu=1) }}"
+         class="px-4 py-2 rounded-lg border border-green-300 text-green-700 hover:bg-green-100 transition">
+        Projets retenus
+      </a>
     </div>
+    <form method="get" class="flex items-center gap-2">
+      <input type="text" name="q" placeholder="Rechercher..."
+             class="border border-gray-300 rounded-lg px-3 py-2 text-sm w-64 focus:ring-blue-400 focus:border-blue-400">
+      <button type="submit"
+              class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">🔍</button>
+    </form>
+  </div>
 
-    <!-- Tableau des projets -->
-    <div class="bg-white shadow-lg rounded-lg overflow-hidden">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-100">
-                <tr>
-                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Titre</th>
-                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Catégorie</th>
-                    <th class="px-6 py-3 text-center text-sm font-semibold text-gray-700">Score WSJF</th>
-                    <th class="px-6 py-3 text-center text-sm font-semibold text-gray-700">Estimation JH</th>
-                    <th class="px-6 py-3 text-center text-sm font-semibold text-gray-700">Statut</th>
-                    <th class="px-6 py-3 text-center text-sm font-semibold text-gray-700">Retenu ?</th>
-                    <th class="px-6 py-3 text-center text-sm font-semibold text-gray-700">Actions</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-200">
-                {% for projet in projets %}
-                    <tr class="hover:bg-gray-50 transition-colors duration-150 ease-in-out">
-                        <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ projet.titre }}</td>
-                        <td class="px-6 py-4 text-sm text-gray-700">{{ projet.categorie or 'Non définie' }}</td>
-                        <td class="px-6 py-4 text-center text-sm text-indigo-600 font-semibold">{{ projet.score_wsjf }}</td>
-                        <td class="px-6 py-4 text-center text-sm text-green-600 font-semibold">{{ projet.duree_estimee_jh }} JH</td>
+  <!-- Tableau -->
+  <div class="overflow-x-auto bg-white shadow rounded-lg">
+    <table class="min-w-full border border-gray-200">
+      <thead class="bg-blue-50 text-blue-700 uppercase text-sm">
+        <tr>
+          <th class="py-3 px-4 text-left border-b">Titre</th>
+          <th class="py-3 px-4 text-left border-b">Catégorie</th>
+          <th class="py-3 px-4 text-center border-b">Score WSJF</th>
+          <th class="py-3 px-4 text-center border-b">Complexité</th>
+          <th class="py-3 px-4 text-center border-b">Retenu</th>
+          <th class="py-3 px-4 text-center border-b">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="text-gray-700">
+        {% for projet in projets %}
+        <tr class="hover:bg-gray-50 transition">
+          <td class="py-3 px-4 border-b">{{ projet.titre }}</td>
+          <td class="py-3 px-4 border-b">{{ projet.categorie or '-' }}</td>
+          <td class="py-3 px-4 border-b text-center font-semibold text-blue-700">{{ projet.score_wsjf or 0 }}</td>
+          <td class="py-3 px-4 border-b text-center">{{ projet.complexite or 0 }}</td>
 
-                        <!-- Statut avec badge coloré -->
-                        <td class="px-6 py-4 text-center text-sm">
-                            <span class="px-2 py-1 rounded text-white text-xs font-semibold
-                                {% if projet.statut == 'Validé' %}
-                                    bg-green-600
-                                {% elif projet.statut == 'Rejeté' %}
-                                    bg-red-600
-                                {% elif projet.statut == 'En cours' %}
-                                    bg-yellow-400 text-black
-                                {% elif projet.statut == 'À planifier' %}
-                                    bg-blue-500
-                                {% else %}
-                                    bg-orange-500
-                                {% endif %}">
-                                {{ projet.statut or 'En attente' }}
-                            </span>
-                        </td>
+          <!-- ✅ Bouton Retenu -->
+          <td class="py-3 px-4 border-b text-center">
+            {% if session.user.role != 'user' %}
+              <form action="{{ url_for('toggle_retenu', projet_id=projet.id) }}" method="POST">
+                <button type="submit"
+                        class="px-3 py-1 rounded-full {{ 'bg-green-100 text-green-700' if projet.retenu else 'bg-gray-100 text-gray-500' }} hover:opacity-80 transition">
+                  {{ '✅ Oui' if projet.retenu else '❌ Non' }}
+                </button>
+              </form>
+            {% else %}
+              <span class="px-3 py-1 rounded-full {{ 'bg-green-50 text-green-700' if projet.retenu else 'bg-gray-100 text-gray-500' }}">
+                {{ '✅ Oui' if projet.retenu else '❌ Non' }}
+              </span>
+            {% endif %}
+          </td>
 
-                        <!-- Boutons Retenu -->
-                        <td class="px-6 py-4 text-center">
-                            <form method="POST" action="{{ url_for('toggle_retenu', projet_id=projet.id) }}" style="display:inline;">
-                                {% if projet.retenu %}
-                                    <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-xs shadow">
-                                        ✅ Retenu
-                                    </button>
-                                {% else %}
-                                    <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-xs shadow">
-                                        ❌ Non retenu
-                                    </button>
-                                {% endif %}
-                            </form>
-                        </td>
+          <!-- ✅ Bloc Actions -->
+          <td class="py-3 px-4 border-b text-center">
+            <div class="flex justify-center gap-3">
+              {% if session.user.role != 'user' %}
+                <!-- Modifier -->
+                <a href="{{ url_for('projet.modifier_projet', projet_id=projet.id) }}"
+                   class="p-2 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-600"
+                   title="Modifier">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5"
+                       fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M11 5h2m-1 0v14m-7-7h14" />
+                  </svg>
+                </a>
 
-                        <!-- Actions -->
-                        <td class="px-6 py-4 text-center text-sm space-x-4">
-                            <a href="{{ url_for('modifier_priorite', id=projet.id) }}"
-                               class="inline-block text-blue-600 hover:text-blue-800 transition" title="Modifier">
-                                <!-- Icône édition -->
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                          d="M15.232 5.232l3.536 3.536M9 11l6 6M3 21h6l11-11a2.828 2.828 0 00-4-4L5 17v4z" />
-                                </svg>
-                            </a>
-                        </td>
-                    </tr>
-                {% else %}
-                    <tr>
-                        <td colspan="7" class="text-center px-6 py-4 text-gray-500">
-                            Aucun projet trouvé.
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-
-    <!-- Graphique -->
-    <div class="mt-10 bg-white shadow-lg rounded-lg p-6">
-        <h2 class="text-xl font-semibold mb-4">Répartition des Projets</h2>
-        <canvas id="wsjfJHChart"></canvas>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-        const ctx = document.getElementById('wsjfJHChart').getContext('2d');
-        const projetsData = [
-            {% for projet in projets %}
-                {
-                    nom: "{{ projet.titre }}",
-                    wsjf: {{ projet.score_wsjf }},
-                    jh: {{ projet.duree_estimee_jh }},
-                    retenu: {{ projet.retenu }}
-                },
-            {% endfor %}
-        ];
-
-        const labels = projetsData.map(p => p.nom);
-        const dataWSJF = projetsData.map(p => p.wsjf);
-        const dataJH = projetsData.map(p => p.jh);
-        const backgroundColors = projetsData.map(p => p.retenu ? '#10b981' : '#f87171'); // Vert si retenu
-
-        new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [
-                    {
-                        label: 'Score WSJF',
-                        data: dataWSJF,
-                        backgroundColor: backgroundColors
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: { position: 'top' },
-                    title: {
-                        display: true,
-                        text: 'Projets - Score WSJF vs Charge estimée (JH)'
-                    }
-                },
-                scales: {
-                    y: { beginAtZero: true }
-                }
-            }
-        });
-    </script>
+                <!-- Supprimer -->
+                <form action="{{ url_for('projet.supprimer_projet', projet_id=projet.id) }}" method="POST"
+                      onsubmit="return confirm('Supprimer le projet {{ projet.titre }} ?');">
+                  <button type="submit"
+                          class="p-2 rounded-full bg-red-50 hover:bg-red-100 text-red-600"
+                          title="Supprimer">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5"
+                         fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                  </button>
+                </form>
+              {% else %}
+                <!-- 🔒 Icône grisée pour les users -->
+                <span class="text-gray-400 italic text-sm"></span>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="6" class="text-center py-4 text-gray-500 italic">
+            Aucun projet trouvé.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
 {% endblock %}

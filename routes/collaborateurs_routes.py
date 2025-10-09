@@ -1,7 +1,8 @@
 # routes/collaborateurs_routes.py
 import sqlite3
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from utils.db_utils import query_db, execute_db
+from utils.decorators import readonly_if_user  # ✅ ajout du décorateur
 
 collab_bp = Blueprint('collaborateurs', __name__, url_prefix='/collaborateurs')
 
@@ -46,6 +47,8 @@ def liste_collaborateurs():
 
     total_pages = (total // per_page) + (1 if total % per_page > 0 else 0)
 
+    user_role = session.get('user', {}).get('role', '')
+
     return render_template(
         'collaborateurs/liste.html',
         collaborateurs=collaborateurs,
@@ -54,7 +57,8 @@ def liste_collaborateurs():
         profil_id=profil_id,
         search=search,
         page=page,
-        total_pages=total_pages
+        total_pages=total_pages,
+        user_role=user_role  # ✅ utile pour cacher les actions dans le template
     )
 
 
@@ -62,6 +66,7 @@ def liste_collaborateurs():
 # AJOUTER COLLABORATEUR
 # -----------------------
 @collab_bp.route('/ajouter', methods=['POST'])
+@readonly_if_user
 def ajouter_collaborateur():
     matricule = request.form['matricule']
     nom = request.form['nom']
@@ -92,6 +97,7 @@ def ajouter_collaborateur():
 # MODIFIER COLLABORATEUR
 # -----------------------
 @collab_bp.route('/modifier/<matricule>', methods=['POST'])
+@readonly_if_user
 def modifier_collaborateur(matricule):
     nom = request.form['nom']
     prenom = request.form['prenom']
@@ -122,6 +128,7 @@ def modifier_collaborateur(matricule):
 # SUPPRIMER COLLABORATEUR
 # -----------------------
 @collab_bp.route('/supprimer/<matricule>', methods=['POST'])
+@readonly_if_user
 def supprimer_collaborateur(matricule):
     try:
         projets_lies = query_db(
